@@ -241,6 +241,22 @@ EOF
     printf '/* forge book.css placeholder */\n' > "${out}/book.css"
   fi
 
+  # Flat sidebar — forge mirrors src/ folders (fee/invite/strategy); replace with product nav.
+  cat > "${out}/src/SUMMARY.md" <<'EOF'
+# Summary
+
+- [Home](README.md)
+
+# Contracts
+- [CcaLaunchFactory](src/strategy/CcaLaunchFactory.sol/contract.CcaLaunchFactory.md)
+- [LaunchToken](src/LaunchToken.sol/contract.LaunchToken.md)
+- [InviteRegistry](src/invite/InviteRegistry.sol/contract.InviteRegistry.md)
+- [InviteValidationHook](src/invite/InviteValidationHook.sol/contract.InviteValidationHook.md)
+- [LaunchFeeHook](src/fee/LaunchFeeHook.sol/contract.LaunchFeeHook.md)
+- [FeeDistributor](src/fee/FeeDistributor.sol/contract.FeeDistributor.md)
+- [IReferralSource](src/fee/IReferralSource.sol/interface.IReferralSource.md)
+EOF
+
   echo "==> Building mdBook..."
   (cd "${out}" && mdbook build)
 }
