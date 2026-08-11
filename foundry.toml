@@ -1,0 +1,26 @@
+[profile.default]
+bytecode_hash = "none"
+evm_version = "cancun"
+ffi = true
+fs_permissions = [
+    {access = "read-write", path = ".forge-snapshots/"},
+    {access = "read-write", path = "./deployments/"},
+]
+libs = ["lib"]
+out = "out"
+solc_version = "0.8.26"
+src = "src"
+via_ir = true
+optimizer = true
+optimizer_runs = 200
+
+# NatSpec docs only need `src/` — skip compiling the test tree.
+[profile.docs]
+src = "src"
+test = "src"
+script = "src"
+out = "out-docs"
+
+[lint]
+exclude_lints = ["screaming-snake-case-immutable", "screaming-snake-case-const"]
+lint_on_build = false

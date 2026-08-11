@@ -1,0 +1,15 @@
+{
+  "chainId": 31337,
+  "startBlock": 1,
+  "poolManager": "0x0D9BAf34817Fccd3b3068768E5d20542B66424A5",
+  "positionManager": "0x90aAE8e3C8dF1d226431D0C2C7feAaa775fAF86C",
+  "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+  "swapRouter": "0xB61598fa7E856D43384A8fcBBAbF2Aa6aa044FfC",
+  "feeEscrow": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+  "positionLocker": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+  "hook": "0xb8bb78d53f6C079dCf7080868ED2d68394792A44",
+  "factory": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+  "protocolTreasury": "0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38",
+  "protocolShareBps": 1000,
+  "nativeCurrency": "ETH"
+}

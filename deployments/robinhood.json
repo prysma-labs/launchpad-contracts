@@ -1,0 +1,33 @@
+{
+  "network": "robinhood",
+  "chainId": 4663,
+  "rpc": "https://rpc.mainnet.chain.robinhood.com",
+  "explorer": "https://robinhoodchain.blockscout.com",
+  "status": "not-deployed",
+  "deployer": null,
+  "uniswap": {
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "poolManager": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+    "positionManager": "0x58daec3116aae6d93017baaea7749052e8a04fa7",
+    "universalRouter": "0x8876789976decbfcbbbe364623c63652db8c0904",
+    "stateView": "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b",
+    "quoter": "0x8dc178efb8111bb0973dd9d722ebeff267c98f94",
+    "swapRouter": null
+  },
+  "launchpad": {
+    "factory": null,
+    "hook": null,
+    "feeEscrow": null,
+    "positionLocker": null,
+    "protocolTreasury": null,
+    "protocolShareBps": 1000,
+    "startBlock": null,
+    "ccaFactory": "0x000000001F26a0044BaA66024e7b6599c61963F8"
+  },
+  "uniswapLiquidityLauncher": {
+    "liquidityLauncher": "0x00004c4ccc709Ef590F7C81102C0689F0263D4e9",
+    "lbpStrategy": "0x05d552391067389EE44fec3924157ed33F976000",
+    "note": "Reference only — Prysma uses custom migrate, not stock LBPStrategy"
+  },
+  "notes": "Deploy after Base Sepolia validation. CCA factory is live on RHC. Confirm hookmate V4 router on 4663 or use Universal Router from frontend."
+}

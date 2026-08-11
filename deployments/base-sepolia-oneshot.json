@@ -1,0 +1,12 @@
+{
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "oneShot": {
+    "factory": "0xdaaab3a3B665B6073386Ce50cd35b5F3E31011F2",
+    "strategy": "0x3aA118E229cD59F7D613B05e178400DB3A1CD7d3",
+    "launcher": "0x00004c4ccc709Ef590F7C81102C0689F0263D4e9",
+    "positionLocker": "0x91E9F5c140a911D71f97C3843D42005e5fF63938",
+    "startBlock": 45200517
+  },
+  "deployer": "0x4D529f34198c6aAFc63e9fA5f34d2d95eFa1e11b"
+}

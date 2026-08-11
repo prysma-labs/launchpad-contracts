@@ -1,0 +1,238 @@
+/* Launchpad contract docs — additive theme only (do not replace mdBook theme/). */
+
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+
+:root {
+  --lp-accent: #0f766e;
+  --lp-accent-soft: #ccfbf1;
+  --lp-ink: #0f172a;
+  --lp-muted: #64748b;
+  --lp-border: #e2e8f0;
+  --lp-surface: #ffffff;
+  --lp-code: #0f172a;
+  --lp-radius: 12px;
+  --lp-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif !important;
+  background:
+    radial-gradient(1100px 520px at 8% -12%, #d8f3ef 0%, transparent 55%),
+    radial-gradient(900px 480px at 100% 0%, #e8eef7 0%, transparent 52%),
+    var(--bg) !important;
+}
+
+.content,
+.content main,
+.content p,
+.content li,
+.content table,
+.menu-title {
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif !important;
+}
+
+code,
+.hljs,
+.content pre,
+.content .filename {
+  font-family: "IBM Plex Mono", ui-monospace, monospace !important;
+}
+
+/* Sidebar polish — keep mdBook positioning intact */
+.sidebar {
+  background: #0b1220 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar .chapter li a,
+.sidebar .section a,
+.sidebar .chapter-item a {
+  color: #e2e8f0 !important;
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar .chapter li a:hover,
+.sidebar .section a:hover,
+.sidebar .chapter-item a:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #fff !important;
+}
+
+.sidebar .chapter li.active > a,
+.sidebar .active,
+.sidebar .chapter-item.active > a {
+  background: rgba(15, 118, 110, 0.3) !important;
+  color: #5eead4 !important;
+}
+
+.sidebar .chapter .spacer,
+.sidebar .section {
+  color: #94a3b8;
+}
+
+/* Top bar */
+.menu-bar {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--lp-border) !important;
+  box-shadow: none !important;
+}
+
+.menu-title {
+  font-weight: 650 !important;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink) !important;
+}
+
+/* Content typography */
+.content main {
+  padding-top: 1.5rem;
+  padding-bottom: 3rem;
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content h4 {
+  font-weight: 700 !important;
+  letter-spacing: -0.025em;
+  color: var(--lp-ink);
+}
+
+.content h1 {
+  font-size: 1.9rem !important;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--lp-border);
+}
+
+.content h2 {
+  font-size: 1.35rem !important;
+  margin-top: 2rem;
+}
+
+.content p,
+.content li {
+  line-height: 1.7;
+}
+
+.content a {
+  color: var(--lp-accent);
+  text-underline-offset: 2px;
+}
+
+.content a:hover {
+  color: #115e59;
+}
+
+/* NatSpec tables */
+.content table {
+  margin: 1.1rem 0 1.5rem !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100% !important;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border) !important;
+  border-radius: var(--lp-radius);
+  overflow: hidden;
+  box-shadow: var(--lp-shadow);
+}
+
+.content table th,
+.content table td {
+  padding: 0.75rem 0.9rem !important;
+  border-bottom: 1px solid var(--lp-border) !important;
+  text-align: left !important;
+  vertical-align: top;
+}
+
+.content table th {
+  background: #f8fafc !important;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--lp-muted) !important;
+  font-weight: 600 !important;
+}
+
+.content table tr:last-child td {
+  border-bottom: none !important;
+}
+
+.content table td:first-child {
+  width: 30% !important;
+  font-family: "IBM Plex Mono", ui-monospace, monospace !important;
+  font-size: 0.84rem;
+  color: var(--lp-accent);
+}
+
+.content table td:nth-child(2) {
+  width: auto !important;
+}
+
+/* Code */
+.content pre {
+  background: var(--lp-code) !important;
+  border-radius: 10px !important;
+  border: 1px solid #1e293b !important;
+  box-shadow: var(--lp-shadow);
+}
+
+.content :not(pre) > code {
+  background: var(--lp-accent-soft) !important;
+  color: #115e59 !important;
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid #99f6e4;
+}
+
+/* Dark themes (mdBook toggle) */
+.ayu,
+.navy,
+.coal {
+  --lp-accent: #2dd4bf;
+  --lp-accent-soft: rgba(45, 212, 191, 0.14);
+  --lp-ink: #e2e8f0;
+  --lp-muted: #94a3b8;
+  --lp-border: #243044;
+  --lp-surface: #111827;
+  --lp-code: #020617;
+  --lp-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.ayu .menu-bar,
+.navy .menu-bar,
+.coal .menu-bar {
+  background: rgba(7, 11, 20, 0.9) !important;
+  border-bottom-color: var(--lp-border) !important;
+}
+
+.ayu .menu-title,
+.navy .menu-title,
+.coal .menu-title,
+.ayu .content h1,
+.navy .content h1,
+.coal .content h1,
+.ayu .content h2,
+.navy .content h2,
+.coal .content h2 {
+  color: var(--lp-ink) !important;
+}
+
+.ayu .content table th,
+.navy .content table th,
+.coal .content table th {
+  background: #0b1220 !important;
+}
+
+.ayu .content :not(pre) > code,
+.navy .content :not(pre) > code,
+.coal .content :not(pre) > code {
+  color: #99f6e4 !important;
+  border-color: rgba(45, 212, 191, 0.28);
+}
