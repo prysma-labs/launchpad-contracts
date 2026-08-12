@@ -37,7 +37,7 @@ Hook fee split of that **$40,000**:
 
 - Creator claims **$8,000** (20%)
 - Platform claims **$2,000** (5%)
-- Referrer pool gets **$30,000** (75%). If Alice referred 3 winning bids and Bob referred 1, Alice can claim **$22,500** and Bob **$7,500**.
+- Referrer pool gets **$30,000** (75%). Shared pro-rata across referrers by invite count — with **100** equal-weight referrers, each can claim **$300**.
 
 ## Contracts
 
