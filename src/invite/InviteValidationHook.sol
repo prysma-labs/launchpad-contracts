@@ -15,9 +15,9 @@ contract InviteValidationHook is IValidationHook {
     }
 
     /// @inheritdoc IValidationHook
-    function validate(uint256, uint128, address owner, address, bytes calldata hookData) external {
+    function validate(uint256, uint128 amount, address owner, address, bytes calldata hookData) external {
         if (hookData.length != 32) revert InvalidHookData();
         bytes32 code = abi.decode(hookData, (bytes32));
-        registry.useInvite(msg.sender, owner, code);
+        registry.useInvite(msg.sender, owner, code, amount);
     }
 }

@@ -8,7 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IReferralSource} from "./IReferralSource.sol";
 
 /// @notice Accrues hook fees and pays creator / referrers / platform via claim.
-/// @dev Split: 20% creator, 75% referrers (pro-rata by referral count), 5% platform.
+/// @dev Split: 20% creator, 75% referrers (pro-rata by referred bid volume), 5% platform.
 contract FeeDistributor {
     using SafeERC20 for IERC20;
 
@@ -137,10 +137,10 @@ contract FeeDistributor {
         PoolInfo storage info = pools[poolId];
         if (!info.registered) revert NotRegistered();
 
-        uint256 total = referrals.totalReferralCount(info.auction);
+        uint256 total = referrals.totalReferralVolume(info.auction);
         if (total == 0) revert NothingToClaim();
 
-        uint256 weight = referrals.referralCount(info.auction, msg.sender);
+        uint256 weight = referrals.referralVolume(info.auction, msg.sender);
         if (weight == 0) revert NothingToClaim();
 
         uint256 entitled = (referrerPool[poolId][currency] * weight) / total;
@@ -156,9 +156,9 @@ contract FeeDistributor {
     function pendingReferrer(PoolId poolId, address currency, address referrer) external view returns (uint256) {
         PoolInfo storage info = pools[poolId];
         if (!info.registered) return 0;
-        uint256 total = referrals.totalReferralCount(info.auction);
+        uint256 total = referrals.totalReferralVolume(info.auction);
         if (total == 0) return 0;
-        uint256 weight = referrals.referralCount(info.auction, referrer);
+        uint256 weight = referrals.referralVolume(info.auction, referrer);
         if (weight == 0) return 0;
         uint256 entitled = (referrerPool[poolId][currency] * weight) / total;
         uint256 already = referrerClaimed[poolId][currency][referrer];

@@ -106,7 +106,7 @@ contract CcaLaunchTest is BaseTest {
         vm.deal(address(this), 100 ether);
     }
 
-    function test_createLaunch_seedsInvitesAndOpensCca() public {
+    function test_createLaunch_registersAuctionAndOpensCca() public {
         (uint256 launchId, address token, address auction) = _create(1 ether);
 
         CcaLaunchFactory.Launch memory launch = factory.getLaunch(launchId);
@@ -116,7 +116,7 @@ contract CcaLaunchTest is BaseTest {
         assertEq(launch.poolLpFee, 1_000);
         assertEq(launch.hookFee, HOOK_FEE);
         assertEq(registry.creatorOf(auction), creator);
-        assertEq(registry.inviteIssuer(auction, inviteCode), creator);
+        assertEq(registry.inviteIssuer(auction, inviteCode), address(0));
         assertEq(address(IContinuousClearingAuction(auction).validationHook()), address(inviteHook));
         assertEq(IContinuousClearingAuction(auction).fundsRecipient(), address(lbp));
 
@@ -124,10 +124,19 @@ contract CcaLaunchTest is BaseTest {
         assertEq(extraData, X_EXTRA);
     }
 
-    function test_createLaunch_revertsWithoutXVerification() public {
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = inviteCode;
+    function test_creatorCanCreateInvitesAfterLaunch() public {
+        (,, address auction) = _create(1 ether);
+        _creatorInvite(auction);
+        assertEq(registry.inviteIssuer(auction, inviteCode), creator);
 
+        bytes32[] memory strangerCodes = new bytes32[](1);
+        strangerCodes[0] = keccak256("stranger-invite");
+        vm.prank(stranger);
+        vm.expectRevert(InviteRegistry.NotAuthorized.selector);
+        registry.createInvites(auction, strangerCodes);
+    }
+
+    function test_createLaunch_revertsWithoutXVerification() public {
         CcaLaunchFactory.CreateParams memory params = CcaLaunchFactory.CreateParams({
             metadata: CcaLaunchFactory.Metadata({
                 name: "Test",
@@ -142,8 +151,7 @@ contract CcaLaunchTest is BaseTest {
             auctionSupplyBps: 5_000,
             poolLpFee: 1_000,
             hookFee: HOOK_FEE,
-            salt: bytes32(uint256(2)),
-            inviteCodes: codes
+            salt: bytes32(uint256(2))
         });
 
         vm.prank(creator);
@@ -162,6 +170,7 @@ contract CcaLaunchTest is BaseTest {
 
     function test_bid_withInvite_recordsReferral() public {
         (,, address auction) = _create(1 ether);
+        _creatorInvite(auction);
         vm.roll(block.number + 1);
 
         vm.prank(bidder);
@@ -169,12 +178,58 @@ contract CcaLaunchTest is BaseTest {
             _maxPrice(), 1 ether, bidder, abi.encode(inviteCode)
         );
         assertTrue(registry.participated(auction, bidder));
-        assertEq(registry.referralCount(auction, creator), 1);
-        assertEq(registry.totalReferralCount(auction), 1);
+        assertEq(registry.referrerOf(auction, bidder), creator);
+        assertEq(registry.referralVolume(auction, creator), 1 ether);
+        assertEq(registry.totalReferralVolume(auction), 1 ether);
+    }
+
+    function test_referralVolume_weightsByBidSize() public {
+        (,, address auction) = _create(1 ether);
+        _creatorInvite(auction);
+        vm.roll(block.number + 1);
+
+        vm.prank(bidder);
+        IContinuousClearingAuction(auction).submitBid{value: 1 ether}(
+            _maxPrice(), 1 ether, bidder, abi.encode(inviteCode)
+        );
+
+        bytes32[] memory codes = new bytes32[](1);
+        codes[0] = keccak256("bidder-invite");
+        vm.prank(bidder);
+        registry.createInvites(auction, codes);
+
+        vm.deal(stranger, 200 ether);
+        vm.prank(stranger);
+        IContinuousClearingAuction(auction).submitBid{value: 100 ether}(
+            _maxPrice(), 100 ether, stranger, abi.encode(codes[0])
+        );
+
+        assertEq(registry.referralVolume(auction, creator), 1 ether);
+        assertEq(registry.referralVolume(auction, bidder), 100 ether);
+        assertEq(registry.totalReferralVolume(auction), 101 ether);
+    }
+
+    function test_referralVolume_accumulatesOnLaterBids() public {
+        (,, address auction) = _create(1 ether);
+        _creatorInvite(auction);
+        vm.roll(block.number + 1);
+
+        vm.prank(bidder);
+        IContinuousClearingAuction(auction).submitBid{value: 1 ether}(
+            _maxPrice(), 1 ether, bidder, abi.encode(inviteCode)
+        );
+        vm.prank(bidder);
+        IContinuousClearingAuction(auction).submitBid{value: 2 ether}(
+            _maxPrice(), 2 ether, bidder, abi.encode(inviteCode)
+        );
+
+        assertEq(registry.referralVolume(auction, creator), 3 ether);
+        assertEq(registry.totalReferralVolume(auction), 3 ether);
     }
 
     function test_participantCanCreateInvites() public {
         (,, address auction) = _create(1 ether);
+        _creatorInvite(auction);
         vm.roll(block.number + 1);
 
         vm.prank(bidder);
@@ -191,6 +246,7 @@ contract CcaLaunchTest is BaseTest {
 
     function test_migrate_poolUsesFeeAndHook_thenHarvestClaims() public {
         (uint256 launchId, address token, address auction) = _create(1 ether);
+        _creatorInvite(auction);
         CcaLaunchFactory.Launch memory launch = factory.getLaunch(launchId);
 
         vm.roll(launch.startBlock + 1);
@@ -252,9 +308,6 @@ contract CcaLaunchTest is BaseTest {
     }
 
     function _create(uint128 minRaise) internal returns (uint256 launchId, address token, address auction) {
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = inviteCode;
-
         CcaLaunchFactory.CreateParams memory params = CcaLaunchFactory.CreateParams({
             metadata: CcaLaunchFactory.Metadata({
                 name: "Test",
@@ -269,12 +322,18 @@ contract CcaLaunchTest is BaseTest {
             auctionSupplyBps: 5_000,
             poolLpFee: 1_000,
             hookFee: HOOK_FEE,
-            salt: bytes32(uint256(1)),
-            inviteCodes: codes
+            salt: bytes32(uint256(1))
         });
 
         vm.prank(creator);
         return factory.createLaunch(params);
+    }
+
+    function _creatorInvite(address auction) internal {
+        bytes32[] memory codes = new bytes32[](1);
+        codes[0] = inviteCode;
+        vm.prank(creator);
+        registry.createInvites(auction, codes);
     }
 
     receive() external payable {}

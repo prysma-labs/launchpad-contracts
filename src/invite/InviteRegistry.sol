@@ -6,10 +6,11 @@ import {IReferralSource} from "../fee/IReferralSource.sol";
 /// @notice Invite codes and referral weights.
 /// @dev Deployed once per chain; shared across all auctions (keyed by auction address).
 /// Authority for bid gating + fee attribution (offchain DB is UX-only):
-/// - Factory registers each auction and seeds creator invite codes (bytes32 → issuer).
-/// - InviteValidationHook calls useInvite on first CCA bid; unknown/self invites revert.
-/// - Codes are reusable; only the first participation per bidder credits the issuer.
-/// - Creator or prior participants may createInvites; FeeDistributor reads referral counts.
+/// - Factory registers each auction (no invites at create).
+/// - Creator (or a prior participant) calls createInvites; codes are bytes32 → issuer.
+/// - InviteValidationHook calls useInvite on CCA bid; unknown/self invites revert on first bid.
+/// - Codes are reusable. Each bid's currency amount is credited to the bidder's original inviter.
+/// - FeeDistributor pays referrers pro-rata by attributed bid volume.
 contract InviteRegistry is IReferralSource {
     /// @dev CcaLaunchFactory — only caller allowed to registerAuction / seedInvites.
     address public factory;
@@ -19,8 +20,9 @@ contract InviteRegistry is IReferralSource {
     mapping(address => address) public auctionOfToken;
     mapping(address => mapping(bytes32 => address)) public inviteIssuer;
     mapping(address => mapping(address => bool)) public participated;
-    mapping(address => mapping(address => uint256)) public referralCountOf;
-    mapping(address => uint256) public totalReferralCountOf;
+    mapping(address => mapping(address => address)) public referrerOf;
+    mapping(address => mapping(address => uint256)) public referralVolumeOf;
+    mapping(address => uint256) public totalReferralVolumeOf;
     mapping(address => uint256) public invitesCreated;
 
     error AlreadySet();
@@ -45,7 +47,8 @@ contract InviteRegistry is IReferralSource {
         address indexed auction,
         address indexed bidder,
         address indexed referrer,
-        bytes32 code
+        bytes32 code,
+        uint128 amount
     );
 
     function setFactory(address factory_) external {
@@ -112,31 +115,43 @@ contract InviteRegistry is IReferralSource {
     }
 
     /// @notice Called by InviteValidationHook during CCA submitBid.
-    function useInvite(address auction, address bidder, bytes32 code) external {
+    /// @dev First bid binds the bidder to the invite issuer. Later bids add volume
+    /// to that same referrer without re-checking the code.
+    function useInvite(
+        address auction,
+        address bidder,
+        bytes32 code,
+        uint128 amount
+    ) external {
         if (msg.sender != validationHook) revert NotAuthorized();
         if (creatorOf[auction] == address(0)) revert InvalidInvite();
-        if (participated[auction][bidder]) return;
 
-        address issuer = inviteIssuer[auction][code];
-        if (issuer == address(0)) revert InvalidInvite();
-        if (issuer == bidder) revert InvalidInvite();
+        address issuer = referrerOf[auction][bidder];
+        if (issuer == address(0)) {
+            issuer = inviteIssuer[auction][code];
+            if (issuer == address(0)) revert InvalidInvite();
+            if (issuer == bidder) revert InvalidInvite();
+            referrerOf[auction][bidder] = issuer;
+            participated[auction][bidder] = true;
+        }
 
-        participated[auction][bidder] = true;
-        referralCountOf[auction][issuer] += 1;
-        totalReferralCountOf[auction] += 1;
-        emit InviteUsed(auction, bidder, issuer, code);
+        if (amount != 0) {
+            referralVolumeOf[auction][issuer] += amount;
+            totalReferralVolumeOf[auction] += amount;
+        }
+        emit InviteUsed(auction, bidder, issuer, code, amount);
     }
 
-    function referralCount(
+    function referralVolume(
         address auction,
         address referrer
     ) external view returns (uint256) {
-        return referralCountOf[auction][referrer];
+        return referralVolumeOf[auction][referrer];
     }
 
-    function totalReferralCount(
+    function totalReferralVolume(
         address auction
     ) external view returns (uint256) {
-        return totalReferralCountOf[auction];
+        return totalReferralVolumeOf[auction];
     }
 }

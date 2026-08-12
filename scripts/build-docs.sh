@@ -178,6 +178,18 @@ ensure_libs() {
     lib/uerc20-factory \
     lib/permit2
 
+  # liquidity-launcher pins uerc20-factory @ v2.0.0-audit (xProofTweetId).
+  # Our factory still encodes UERC20Metadata.extraData (Uniswap main / robinhood deploy).
+  local uerc20="lib/liquidity-launcher/lib/uerc20-factory"
+  local uerc20_pin="a747318fcce114f56a3a21b8bcec83663a61208b"
+  if [[ -d "${uerc20}/.git" ]] || [[ -f "${uerc20}/.git" ]]; then
+    echo "==> Pinning uerc20-factory to ${uerc20_pin} (extraData)"
+    git -C "${uerc20}" fetch --depth 1 origin "${uerc20_pin}" 2>/dev/null || \
+      git -C "${uerc20}" fetch --depth 1 origin main
+    git -C "${uerc20}" checkout -q "${uerc20_pin}" || \
+      git -C "${uerc20}" checkout -q origin/main
+  fi
+
   local required=(
     lib/liquidity-launcher/lib/v4-core/src/types/PoolId.sol
     lib/liquidity-launcher/lib/v4-core/src/types/Currency.sol
@@ -241,12 +253,18 @@ EOF
     printf '/* forge book.css placeholder */\n' > "${out}/book.css"
   fi
 
-  # Flat sidebar — forge mirrors src/ folders (fee/invite/strategy); replace with product nav.
+  # Product sidebar — concepts + contracts grouped by area (forge's folder tree is too noisy).
+  mkdir -p "${out}/src/concepts"
+  cp "${theme_dir}/concepts/"*.md "${out}/src/concepts/"
+
   cat > "${out}/src/SUMMARY.md" <<'EOF'
 # Summary
 
 - [Home](README.md)
-
+# Concepts
+- [Fees](concepts/fees.md)
+- [Verified creators](concepts/verified-creators.md)
+- [Invite codes](concepts/invite-codes.md)
 # Contracts
 - [CcaLaunchFactory](src/strategy/CcaLaunchFactory.sol/contract.CcaLaunchFactory.md)
 - [InviteRegistry](src/invite/InviteRegistry.sol/contract.InviteRegistry.md)

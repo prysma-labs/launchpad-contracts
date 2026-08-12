@@ -48,12 +48,54 @@ code,
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.sidebar .sidebar-scrollbox {
+  padding: 0.75rem 0.85rem 1.5rem !important;
+}
+
+.sidebar .chapter li.chapter-item {
+  margin-block-start: 0.2em !important;
+  line-height: 1.35em !important;
+}
+
+/* Blank SUMMARY lines become empty affix rows — hide them. */
+.sidebar .chapter li.chapter-item.affix:empty {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 0 !important;
+}
+
+.sidebar .chapter {
+  margin: 0.25rem 0 !important;
+}
+
+.sidebar .chapter li.part-title {
+  color: #94a3b8 !important;
+  font-size: 15px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.25 !important;
+  margin: 14px 0 2px !important;
+  padding: 0 0.35rem;
+  opacity: 1 !important;
+  min-height: 0 !important;
+}
+
+.sidebar .chapter li.part-title:first-child {
+  margin-top: 0.35rem !important;
+}
+
 .sidebar .chapter li a,
 .sidebar .section a,
 .sidebar .chapter-item a {
   color: #e2e8f0 !important;
+  font-size: 13px !important;
   border-radius: 8px;
-  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0.2rem 0.45rem !important;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .sidebar .chapter li a:hover,

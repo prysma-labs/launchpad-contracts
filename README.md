@@ -8,36 +8,18 @@ Launches use Uniswap’s [CCA](https://developers.uniswap.org/docs/liquidity/liq
 
 Flow in this stack:
 
-1. **Launch** — `CcaLaunchFactory` mints a fixed-supply Uniswap `UERC20` (with required X verification in `extraData`), seeds invite codes, and opens a CCA via [LiquidityLauncher → LBPStrategy](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies).
+1. **Launch** — `CcaLaunchFactory` mints a fixed-supply Uniswap `UERC20` (with required X verification in `extraData`) and opens a CCA via [LiquidityLauncher → LBPStrategy](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies). The creator then mints invite codes on `InviteRegistry`.
 2. **Bid** — Participants `submitBid` with invite `hookData`, checked by `InviteValidationHook` / `InviteRegistry` (referral weight is recorded for later fee claims).
 3. **Migrate** — After the auction ends, anyone can call LBP [`migrate`](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies) to seed an ETH/token v4 pool at the discovered price, with `LaunchFeeHook` attached.
 4. **Trade & claim** — Swaps accrue hook fees; `harvest` pushes balances to `FeeDistributor` for creator / referrer / platform claims. Auction winners claim tokens after the configured claim block.
 
-## Fees
+## Concepts
 
-Defaults (overridable at launch where noted):
-
-| Parameter | Default | Notes |
-|---|---|---|
-| Token split | **50%** auction / **50%** LP | `auctionSupplyBps`; remainder reserved for the post-migrate position |
-| Pool LP fee | **0.1%** | Accrues to the locked LP NFT; autocompounded back into the pool via `CompoundingClaimRecipient` |
-| Hook fee | **0.4%** | Taken by `LaunchFeeHook` on the unspecified swap amount (`afterSwap`) |
-| Hook fee split | **20%** creator / **75%** referrers / **5%** platform | Fixed in `FeeDistributor`; referrers share pro-rata by invite count |
-
-**Example — $10M trading volume**
-
-Assume a **$50k** auction raise seeds the locked LP (default 50/50 auction/LP split).
-
-| Fee | Rate | On $10M volume |
-|---|---|---|
-| Pool LP fee (autocompounded) | 0.1% | **$10,000** reinvested into the position → liquidity **$50k → $60k** |
-| Hook fee (distributed) | 0.4% | **$40,000** harvested into `FeeDistributor` |
-
-Hook fee split of that **$40,000**:
-
-- Creator claims **$8,000** (20%)
-- Platform claims **$2,000** (5%)
-- Referrer pool gets **$30,000** (75%). Shared pro-rata across referrers by invite count — with **100** equal-weight referrers, each can claim **$300**.
+| Concept | What it covers |
+|---|---|
+| [Fees](concepts/fees.md) | Auction/LP split, pool LP fee, hook fee, claim split, and a worked volume example |
+| [Verified creators](concepts/verified-creators.md) | Why launches require a public creator identity, and how the proof is stored in UERC20 `extraData` |
+| [Invite codes](concepts/invite-codes.md) | Invite-gated bidding, referral weight, and how codes map to `hookData` |
 
 ## Contracts
 

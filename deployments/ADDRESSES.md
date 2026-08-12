@@ -15,23 +15,21 @@
 | PositionManager | `0x4B2C77d209D3405F41a037Ec6c77F7F5b8e2ca80` |
 | LiquidityLauncher | `0x00004c4ccc709Ef590F7C81102C0689F0263D4e9` |
 
-### CCA launchpad (start block `45321260`)
+### CCA launchpad (start block `45401600`)
 
 | Contract | Address |
 |---|---|
-| CcaLaunchFactory | [`0x4e9E19F019e5C9f1bDF5bEA8F449AF1947Dc6982`](https://sepolia.basescan.org/address/0x4e9E19F019e5C9f1bDF5bEA8F449AF1947Dc6982) |
-| LBPStrategy | [`0x877A69aC75Ae3fe1ca4bdCdBA02c0e424e886000`](https://sepolia.basescan.org/address/0x877A69aC75Ae3fe1ca4bdCdBA02c0e424e886000) |
-| ContinuousClearingAuctionFactory | [`0xFD7D3B0865c2eEe3E1eDE156b584f07e53138229`](https://sepolia.basescan.org/address/0xFD7D3B0865c2eEe3E1eDE156b584f07e53138229) |
-| LaunchFeeHook | [`0x8BE7748Bfa399A4771db7bC619bE5e492bd8e044`](https://sepolia.basescan.org/address/0x8BE7748Bfa399A4771db7bC619bE5e492bd8e044) |
-| FeeDistributor | [`0x7B59E019eFF830DC4A82D647cA8Fe355Fc6FC3FD`](https://sepolia.basescan.org/address/0x7B59E019eFF830DC4A82D647cA8Fe355Fc6FC3FD) |
-| InviteRegistry | [`0x1295C3A28b6251aB2C07C1EE3D0bf58d3b95a876`](https://sepolia.basescan.org/address/0x1295C3A28b6251aB2C07C1EE3D0bf58d3b95a876) |
-| InviteValidationHook | [`0x4F63F3d49a5e342f5541265339294C923421173f`](https://sepolia.basescan.org/address/0x4F63F3d49a5e342f5541265339294C923421173f) |
-| CompoundingClaimRecipient | [`0xd7dfF278E3cD79a4C8AC0aA708e53253e174A99a`](https://sepolia.basescan.org/address/0xd7dfF278E3cD79a4C8AC0aA708e53253e174A99a) |
-| UERC20Factory | _(redeploy `DeployCca` — written to `*-cca.json` as `cca.uerc20Factory`)_ |
-| Deployer | `0x4D529f34198c6aAFc63e9fA5f34d2d95eFa1e11b` |
+| CcaLaunchFactory | [`0x938363129afd4Df7b441696fc436657aD637260f`](https://sepolia.basescan.org/address/0x938363129afd4Df7b441696fc436657aD637260f) |
+| LBPStrategy | [`0x7F28ef707f36EE05Fc576c62b3B5c2EaeD55A000`](https://sepolia.basescan.org/address/0x7F28ef707f36EE05Fc576c62b3B5c2EaeD55A000) |
+| ContinuousClearingAuctionFactory | [`0x643c96A46fB316A73679d2BCd7F821BE272B2b07`](https://sepolia.basescan.org/address/0x643c96A46fB316A73679d2BCd7F821BE272B2b07) |
+| LaunchFeeHook | [`0x26ba4C6Ebd4f34F3db58403bADF50352620D2044`](https://sepolia.basescan.org/address/0x26ba4C6Ebd4f34F3db58403bADF50352620D2044) |
+| FeeDistributor | [`0x1480495034830b70921B3F6F7E69d7A853B5ac86`](https://sepolia.basescan.org/address/0x1480495034830b70921B3F6F7E69d7A853B5ac86) |
+| InviteRegistry | [`0x954d0F9A3b06Ac217F759060A78750b0b03b5e2C`](https://sepolia.basescan.org/address/0x954d0F9A3b06Ac217F759060A78750b0b03b5e2C) |
+| InviteValidationHook | [`0x8EF88BAA513BC3145EdeDe2C349A123Fe00594e1`](https://sepolia.basescan.org/address/0x8EF88BAA513BC3145EdeDe2C349A123Fe00594e1) |
+| CompoundingClaimRecipient | [`0xb74EC2BE203487477a862E19EE979C7173fa35C4`](https://sepolia.basescan.org/address/0xb74EC2BE203487477a862E19EE979C7173fa35C4) |
+| UERC20Factory | [`0x25805c1744de4C9f9d5548B7942256D97e8f016d`](https://sepolia.basescan.org/address/0x25805c1744de4C9f9d5548B7942256D97e8f016d) |
+| Deployer | `0xf8543D5b72EF43D0F99b6471424CB2D8dE097324` |
 
 ```bash
-cd contracts
-source .env
 ./scripts/deploy-cca.sh
 ```

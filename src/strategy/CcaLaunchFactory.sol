@@ -68,7 +68,6 @@ contract CcaLaunchFactory {
         uint24 poolLpFee;
         uint24 hookFee;
         bytes32 salt;
-        bytes32[] inviteCodes;
     }
 
     struct Launch {
@@ -103,7 +102,6 @@ contract CcaLaunchFactory {
     error InvalidDuration();
     error InvalidSupplyBps();
     error InvalidFee();
-    error NeedInvites();
     error NeedXVerification();
 
     constructor(
@@ -134,7 +132,6 @@ contract CcaLaunchFactory {
             revert EmptyName();
         }
         if (params.auctionBlocks < 2) revert InvalidDuration();
-        if (params.inviteCodes.length == 0) revert NeedInvites();
         if (params.metadata.extraData.length == 0) revert NeedXVerification();
 
         uint16 auctionSupplyBps = params.auctionSupplyBps == 0 ? DEFAULT_AUCTION_SUPPLY_BPS : params.auctionSupplyBps;
@@ -226,7 +223,6 @@ contract CcaLaunchFactory {
         );
 
         invites.registerAuction(auction, token, msg.sender);
-        invites.seedInvites(auction, msg.sender, params.inviteCodes);
 
         Distribution memory dist =
             Distribution({strategy: address(lbpStrategy), amount: uint128(supply), configData: configData});
