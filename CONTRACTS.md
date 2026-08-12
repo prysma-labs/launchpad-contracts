@@ -14,8 +14,8 @@ Permissionless **CCA + LBPStrategy** launches via Uniswap LiquidityLauncher → 
 
 ## Launch model
 
-1. Creator calls `CcaLaunchFactory.createLaunch` (seeds invite codes)
-2. Factory mints `LaunchToken` into LiquidityLauncher and `distributeToken` → `LBPStrategy` → CCA
+1. Creator calls `CcaLaunchFactory.createLaunch` (seeds invite codes; requires non-empty `extraData` with X verification)
+2. Factory mints `UERC20` via `LiquidityLauncher.createToken(UERC20Factory, …)` and `distributeToken` → `LBPStrategy` → CCA
 3. Bidders `submitBid(..., hookData)` with invite (validation hook)
 4. After end: permissionless `LBPStrategy.migrate` seeds pool (fee=0.1%, hook=`LaunchFeeHook`)
 5. Swaps → hook fees → `harvest` → `FeeDistributor` (20% / 75% / 5%)
@@ -24,10 +24,10 @@ Defaults: **50/50** auction/LP · pool LP **0.1%** · hook **0.4%** · platform 
 
 ## Contracts
 
-- `LaunchToken`, `CcaLaunchFactory`
+- `CcaLaunchFactory` (mints Uniswap `UERC20` with metadata `description` / `website` / `image` / `extraData`)
 - `InviteRegistry`, `InviteValidationHook`
 - `FeeDistributor`, `LaunchFeeHook` (InitializerHook + afterSwap fee)
-- Uniswap: `LiquidityLauncher`, `LBPStrategy`, `ContinuousClearingAuctionFactory`, `CompoundingClaimRecipient`
+- Uniswap: `LiquidityLauncher`, `UERC20Factory`, `LBPStrategy`, `ContinuousClearingAuctionFactory`, `CompoundingClaimRecipient`
 
 ## Tests / deploy
 

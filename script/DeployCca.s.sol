@@ -16,6 +16,7 @@ import {IDistributorFactory} from "liquidity-launcher/src/interfaces/IDistributo
 import {ILiquidityLauncher} from "liquidity-launcher/src/interfaces/ILiquidityLauncher.sol";
 import {ILBPStrategy} from "liquidity-launcher/src/interfaces/ILBPStrategy.sol";
 import {ContinuousClearingAuctionFactory} from "continuous-clearing-auction/ContinuousClearingAuctionFactory.sol";
+import {UERC20Factory} from "@uniswap/uerc20-factory/src/factories/UERC20Factory.sol";
 
 import {FeeDistributor} from "../src/fee/FeeDistributor.sol";
 import {LaunchFeeHook} from "../src/fee/LaunchFeeHook.sol";
@@ -84,6 +85,11 @@ contract DeployCcaScript is Script {
         distributor.setReferrals(address(registry));
         distributor.setHook(address(feeHook));
 
+        address uerc20FactoryAddr = vm.envOr("UERC20_FACTORY", address(0));
+        if (uerc20FactoryAddr == address(0)) {
+            uerc20FactoryAddr = address(new UERC20Factory());
+        }
+
         CcaLaunchFactory factory = new CcaLaunchFactory(
             ILiquidityLauncher(launcherAddr),
             ILBPStrategy(address(lbp)),
@@ -91,7 +97,8 @@ contract DeployCcaScript is Script {
             registry,
             distributor,
             feeHook,
-            address(compounder)
+            address(compounder),
+            uerc20FactoryAddr
         );
         registry.setFactory(address(factory));
         distributor.setRegistrar(address(factory));
@@ -109,12 +116,14 @@ contract DeployCcaScript is Script {
             address(feeHook),
             address(registry),
             address(inviteHook),
+            uerc20FactoryAddr,
             startBlock
         );
 
         console2.log("CcaLaunchFactory", address(factory));
         console2.log("LBPStrategy", address(lbp));
         console2.log("CCAFactory", address(ccaFactory));
+        console2.log("UERC20Factory", uerc20FactoryAddr);
         console2.log("FeeDistributor", address(distributor));
         console2.log("LaunchFeeHook", address(feeHook));
         console2.log("InviteRegistry", address(registry));
@@ -131,6 +140,7 @@ contract DeployCcaScript is Script {
         address feeHook,
         address registry,
         address inviteHook,
+        address uerc20Factory,
         uint256 startBlock
     ) internal {
         string memory key = "cca";
@@ -143,6 +153,7 @@ contract DeployCcaScript is Script {
         vm.serializeAddress(key, "feeHook", feeHook);
         vm.serializeAddress(key, "inviteRegistry", registry);
         vm.serializeAddress(key, "inviteValidationHook", inviteHook);
+        vm.serializeAddress(key, "uerc20Factory", uerc20Factory);
         string memory ccaJson = vm.serializeUint(key, "startBlock", startBlock);
 
         string memory name;

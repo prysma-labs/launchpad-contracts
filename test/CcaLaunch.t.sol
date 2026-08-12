@@ -21,6 +21,8 @@ import {ILBPInitializer} from "liquidity-launcher/src/interfaces/ILBPInitializer
 import {ContinuousClearingAuctionFactory} from "continuous-clearing-auction/ContinuousClearingAuctionFactory.sol";
 import {IContinuousClearingAuction} from "continuous-clearing-auction/interfaces/IContinuousClearingAuction.sol";
 import {FixedPoint96} from "continuous-clearing-auction/libraries/FixedPoint96.sol";
+import {UERC20Factory} from "@uniswap/uerc20-factory/src/factories/UERC20Factory.sol";
+import {BaseUERC20} from "@uniswap/uerc20-factory/src/tokens/BaseUERC20.sol";
 
 import {BaseTest} from "./utils/BaseTest.sol";
 import {FeeDistributor} from "../src/fee/FeeDistributor.sol";
@@ -43,6 +45,7 @@ contract CcaLaunchTest is BaseTest {
     InviteRegistry registry;
     InviteValidationHook inviteHook;
     LaunchFeeHook feeHook;
+    UERC20Factory uerc20Factory;
     CcaLaunchFactory factory;
 
     address creator = makeAddr("creator");
@@ -50,12 +53,15 @@ contract CcaLaunchTest is BaseTest {
     address stranger = makeAddr("stranger");
 
     bytes32 inviteCode = keccak256("invite-1");
+    bytes constant X_EXTRA =
+        '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6InRlc3QifQ.sig"}';
 
     function setUp() public {
         deployArtifactsAndLabel();
 
         launcher = new LiquidityLauncher(IAllowanceTransfer(address(permit2)));
         ccaFactory = new ContinuousClearingAuctionFactory(address(0));
+        uerc20Factory = new UERC20Factory();
 
         bytes memory lbpArgs = abi.encode(address(positionManager), address(poolManager), address(ccaFactory));
         (address lbpAddr, bytes32 lbpSalt) =
@@ -88,7 +94,8 @@ contract CcaLaunchTest is BaseTest {
             registry,
             distributor,
             feeHook,
-            address(this)
+            address(this),
+            address(uerc20Factory)
         );
         registry.setFactory(address(factory));
         distributor.setRegistrar(address(factory));
@@ -112,6 +119,36 @@ contract CcaLaunchTest is BaseTest {
         assertEq(registry.inviteIssuer(auction, inviteCode), creator);
         assertEq(address(IContinuousClearingAuction(auction).validationHook()), address(inviteHook));
         assertEq(IContinuousClearingAuction(auction).fundsRecipient(), address(lbp));
+
+        (,,, bytes memory extraData) = BaseUERC20(token).metadata();
+        assertEq(extraData, X_EXTRA);
+    }
+
+    function test_createLaunch_revertsWithoutXVerification() public {
+        bytes32[] memory codes = new bytes32[](1);
+        codes[0] = inviteCode;
+
+        CcaLaunchFactory.CreateParams memory params = CcaLaunchFactory.CreateParams({
+            metadata: CcaLaunchFactory.Metadata({
+                name: "Test",
+                symbol: "TST",
+                description: "d",
+                image: "",
+                website: "",
+                extraData: ""
+            }),
+            auctionBlocks: AUCTION_BLOCKS,
+            minRaise: 1 ether,
+            auctionSupplyBps: 5_000,
+            poolLpFee: 1_000,
+            hookFee: HOOK_FEE,
+            salt: bytes32(uint256(2)),
+            inviteCodes: codes
+        });
+
+        vm.prank(creator);
+        vm.expectRevert(CcaLaunchFactory.NeedXVerification.selector);
+        factory.createLaunch(params);
     }
 
     function test_bid_revertsWithoutInvite() public {
@@ -224,9 +261,8 @@ contract CcaLaunchTest is BaseTest {
                 symbol: "TST",
                 description: "d",
                 image: "",
-                website: "",
-                twitter: "",
-                telegram: ""
+                website: "https://x.com/test",
+                extraData: X_EXTRA
             }),
             auctionBlocks: AUCTION_BLOCKS,
             minRaise: minRaise,

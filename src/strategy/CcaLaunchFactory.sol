@@ -6,6 +6,7 @@ import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {ILiquidityLauncher} from "liquidity-launcher/src/interfaces/ILiquidityLauncher.sol";
 import {Distribution} from "liquidity-launcher/src/types/Distribution.sol";
@@ -22,12 +23,13 @@ import {AuctionParameters} from "continuous-clearing-auction/interfaces/IContinu
 import {ConstantsLib} from "continuous-clearing-auction/libraries/ConstantsLib.sol";
 import {FixedPoint96} from "continuous-clearing-auction/libraries/FixedPoint96.sol";
 
-import {LaunchToken} from "../LaunchToken.sol";
+import {UERC20Metadata} from "@uniswap/uerc20-factory/src/libraries/UERC20MetadataLibrary.sol";
+
 import {FeeDistributor} from "../fee/FeeDistributor.sol";
 import {LaunchFeeHook} from "../fee/LaunchFeeHook.sol";
 import {InviteRegistry} from "../invite/InviteRegistry.sol";
 
-/// @notice Creates LaunchToken + CCA/LBP distribution with invite gating and fee hook.
+/// @notice Creates a UERC20 + CCA/LBP distribution with invite gating and fee hook.
 contract CcaLaunchFactory {
     using PoolIdLibrary for PoolKey;
 
@@ -37,6 +39,7 @@ contract CcaLaunchFactory {
     uint16 public constant DEFAULT_AUCTION_SUPPLY_BPS = 5_000;
     uint256 public constant DEFAULT_AUCTION_TICK_SPACING = 100 << FixedPoint96.RESOLUTION;
     uint256 public constant DEFAULT_FLOOR_PRICE = 1000 << FixedPoint96.RESOLUTION;
+    uint128 public constant TOTAL_SUPPLY = 1_000_000_000 ether;
 
     ILiquidityLauncher public immutable launcher;
     ILBPStrategy public immutable lbpStrategy;
@@ -45,6 +48,7 @@ contract CcaLaunchFactory {
     FeeDistributor public immutable distributor;
     LaunchFeeHook public immutable feeHook;
     address public immutable positionRecipient;
+    address public immutable uerc20Factory;
 
     struct Metadata {
         string name;
@@ -52,8 +56,8 @@ contract CcaLaunchFactory {
         string description;
         string image;
         string website;
-        string twitter;
-        string telegram;
+        /// @dev Required opaque bytes; expected to include xVerificationToken JSON.
+        bytes extraData;
     }
 
     struct CreateParams {
@@ -100,6 +104,7 @@ contract CcaLaunchFactory {
     error InvalidSupplyBps();
     error InvalidFee();
     error NeedInvites();
+    error NeedXVerification();
 
     constructor(
         ILiquidityLauncher launcher_,
@@ -108,7 +113,8 @@ contract CcaLaunchFactory {
         InviteRegistry invites_,
         FeeDistributor distributor_,
         LaunchFeeHook feeHook_,
-        address positionRecipient_
+        address positionRecipient_,
+        address uerc20Factory_
     ) {
         launcher = launcher_;
         lbpStrategy = lbpStrategy_;
@@ -117,12 +123,19 @@ contract CcaLaunchFactory {
         distributor = distributor_;
         feeHook = feeHook_;
         positionRecipient = positionRecipient_;
+        uerc20Factory = uerc20Factory_;
     }
 
-    function createLaunch(CreateParams calldata params) external returns (uint256 launchId, address token, address auction) {
-        if (bytes(params.metadata.name).length == 0 || bytes(params.metadata.symbol).length == 0) revert EmptyName();
+    function createLaunch(CreateParams calldata params)
+        external
+        returns (uint256 launchId, address token, address auction)
+    {
+        if (bytes(params.metadata.name).length == 0 || bytes(params.metadata.symbol).length == 0) {
+            revert EmptyName();
+        }
         if (params.auctionBlocks < 2) revert InvalidDuration();
         if (params.inviteCodes.length == 0) revert NeedInvites();
+        if (params.metadata.extraData.length == 0) revert NeedXVerification();
 
         uint16 auctionSupplyBps = params.auctionSupplyBps == 0 ? DEFAULT_AUCTION_SUPPLY_BPS : params.auctionSupplyBps;
         if (auctionSupplyBps == 0 || auctionSupplyBps >= 10_000) revert InvalidSupplyBps();
@@ -131,20 +144,27 @@ contract CcaLaunchFactory {
         uint24 hookFee = params.hookFee == 0 ? DEFAULT_HOOK_FEE : params.hookFee;
         if (poolLpFee > 100_000 || hookFee > 1_000_000) revert InvalidFee();
 
-        token = address(
-            new LaunchToken(
-                params.metadata.name,
-                params.metadata.symbol,
-                params.metadata.description,
-                params.metadata.image,
-                params.metadata.website,
-                params.metadata.twitter,
-                params.metadata.telegram,
-                address(launcher)
-            )
+        bytes memory tokenData = abi.encode(
+            UERC20Metadata({
+                description: params.metadata.description,
+                website: params.metadata.website,
+                image: params.metadata.image,
+                extraData: params.metadata.extraData
+            })
         );
 
-        uint256 supply = LaunchToken(token).TOTAL_SUPPLY();
+        // Atomic with distributeToken below — same tx, so launcher-held mint is safe.
+        token = launcher.createToken(
+            uerc20Factory,
+            params.metadata.name,
+            params.metadata.symbol,
+            18,
+            TOTAL_SUPPLY,
+            address(launcher),
+            tokenData
+        );
+
+        uint256 supply = IERC20(token).totalSupply();
         uint128 reservedForLp = uint128((supply * (10_000 - auctionSupplyBps)) / 10_000);
         uint128 auctionSupply = uint128(supply - reservedForLp);
 

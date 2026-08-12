@@ -27,6 +27,7 @@
 | InviteRegistry | [`0x1295C3A28b6251aB2C07C1EE3D0bf58d3b95a876`](https://sepolia.basescan.org/address/0x1295C3A28b6251aB2C07C1EE3D0bf58d3b95a876) |
 | InviteValidationHook | [`0x4F63F3d49a5e342f5541265339294C923421173f`](https://sepolia.basescan.org/address/0x4F63F3d49a5e342f5541265339294C923421173f) |
 | CompoundingClaimRecipient | [`0xd7dfF278E3cD79a4C8AC0aA708e53253e174A99a`](https://sepolia.basescan.org/address/0xd7dfF278E3cD79a4C8AC0aA708e53253e174A99a) |
+| UERC20Factory | _(redeploy `DeployCca` — written to `*-cca.json` as `cca.uerc20Factory`)_ |
 | Deployer | `0x4D529f34198c6aAFc63e9fA5f34d2d95eFa1e11b` |
 
 ```bash

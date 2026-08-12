@@ -13,7 +13,7 @@ v4-periphery/=lib/liquidity-launcher/lib/v4-periphery/
 @openzeppelin/uniswap-hooks/=lib/uniswap-hooks/
 
 solady/=lib/liquidity-launcher/lib/solady/src/
-@solady/=lib/liquidity-launcher/lib/solady/src/
+@solady/=lib/liquidity-launcher/lib/solady/
 @uniswap/blocknumberish/=lib/liquidity-launcher/lib/blocknumberish/
 blocknumberish/=lib/liquidity-launcher/lib/blocknumberish/
 @uniswap/uerc20-factory/=lib/liquidity-launcher/lib/uerc20-factory/

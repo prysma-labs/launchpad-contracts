@@ -8,7 +8,7 @@ Launches use Uniswap’s [CCA](https://developers.uniswap.org/docs/liquidity/liq
 
 Flow in this stack:
 
-1. **Launch** — `CcaLaunchFactory` mints a fixed-supply `LaunchToken`, seeds invite codes, and opens a CCA via [LiquidityLauncher → LBPStrategy](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies).
+1. **Launch** — `CcaLaunchFactory` mints a fixed-supply Uniswap `UERC20` (with required X verification in `extraData`), seeds invite codes, and opens a CCA via [LiquidityLauncher → LBPStrategy](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies).
 2. **Bid** — Participants `submitBid` with invite `hookData`, checked by `InviteValidationHook` / `InviteRegistry` (referral weight is recorded for later fee claims).
 3. **Migrate** — After the auction ends, anyone can call LBP [`migrate`](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies) to seed an ETH/token v4 pool at the discovered price, with `LaunchFeeHook` attached.
 4. **Trade & claim** — Swaps accrue hook fees; `harvest` pushes balances to `FeeDistributor` for creator / referrer / platform claims. Auction winners claim tokens after the configured claim block.
@@ -43,12 +43,11 @@ Hook fee split of that **$40,000**:
 
 | Contract | Role |
 |---|---|
-| [`CcaLaunchFactory`](src/strategy/CcaLaunchFactory.sol/contract.CcaLaunchFactory.md) | Create token + CCA/LBP launch |
-| [`LaunchToken`](src/LaunchToken.sol/contract.LaunchToken.md) | Fixed-supply ERC-20 + metadata |
+| [`CcaLaunchFactory`](src/strategy/CcaLaunchFactory.sol/contract.CcaLaunchFactory.md) | Create UERC20 + CCA/LBP launch (requires `extraData` X verification) |
 | [`InviteRegistry`](src/invite/InviteRegistry.sol/contract.InviteRegistry.md) | Invite codes + referral weights |
 | [`InviteValidationHook`](src/invite/InviteValidationHook.sol/contract.InviteValidationHook.md) | CCA bid gate (`hookData`) |
 | [`LaunchFeeHook`](src/fee/LaunchFeeHook.sol/contract.LaunchFeeHook.md) | Post-migrate swap hook fee |
 | [`FeeDistributor`](src/fee/FeeDistributor.sol/contract.FeeDistributor.md) | Claimable 20/75/5 fee split |
 | [`IReferralSource`](src/fee/IReferralSource.sol/interface.IReferralSource.md) | Referral weight interface |
 
-Upstream Uniswap pieces used at runtime (not in this repo’s `src/`): LiquidityLauncher, LBPStrategy, Continuous Clearing Auction, CompoundingClaimRecipient.
+Upstream Uniswap pieces used at runtime (not in this repo’s `src/`): LiquidityLauncher, LBPStrategy, Continuous Clearing Auction, CompoundingClaimRecipient, UERC20Factory / UERC20.

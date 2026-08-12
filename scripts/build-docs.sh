@@ -249,7 +249,6 @@ EOF
 
 # Contracts
 - [CcaLaunchFactory](src/strategy/CcaLaunchFactory.sol/contract.CcaLaunchFactory.md)
-- [LaunchToken](src/LaunchToken.sol/contract.LaunchToken.md)
 - [InviteRegistry](src/invite/InviteRegistry.sol/contract.InviteRegistry.md)
 - [InviteValidationHook](src/invite/InviteValidationHook.sol/contract.InviteValidationHook.md)
 - [LaunchFeeHook](src/fee/LaunchFeeHook.sol/contract.LaunchFeeHook.md)
