@@ -33,7 +33,9 @@ import {InviteRegistry} from "../invite/InviteRegistry.sol";
 contract CcaLaunchFactory {
     using PoolIdLibrary for PoolKey;
 
+    /// @dev Protocol-fixed. Not creator-configurable.
     uint24 public constant DEFAULT_POOL_LP_FEE = 1_000;
+    /// @dev Protocol-fixed. Not creator-configurable.
     uint24 public constant DEFAULT_HOOK_FEE = 4_000;
     int24 public constant DEFAULT_TICK_SPACING = 60;
     uint16 public constant DEFAULT_AUCTION_SUPPLY_BPS = 5_000;
@@ -65,9 +67,8 @@ contract CcaLaunchFactory {
         uint64 auctionBlocks;
         uint128 minRaise;
         uint16 auctionSupplyBps;
-        uint24 poolLpFee;
-        uint24 hookFee;
         bytes32 salt;
+        bytes32 inviteCode;
     }
 
     struct Launch {
@@ -101,8 +102,8 @@ contract CcaLaunchFactory {
     error EmptyName();
     error InvalidDuration();
     error InvalidSupplyBps();
-    error InvalidFee();
     error NeedXVerification();
+    error NeedInvite();
 
     constructor(
         ILiquidityLauncher launcher_,
@@ -133,13 +134,13 @@ contract CcaLaunchFactory {
         }
         if (params.auctionBlocks < 2) revert InvalidDuration();
         if (params.metadata.extraData.length == 0) revert NeedXVerification();
+        if (params.inviteCode == bytes32(0)) revert NeedInvite();
 
         uint16 auctionSupplyBps = params.auctionSupplyBps == 0 ? DEFAULT_AUCTION_SUPPLY_BPS : params.auctionSupplyBps;
         if (auctionSupplyBps == 0 || auctionSupplyBps >= 10_000) revert InvalidSupplyBps();
 
-        uint24 poolLpFee = params.poolLpFee == 0 ? DEFAULT_POOL_LP_FEE : params.poolLpFee;
-        uint24 hookFee = params.hookFee == 0 ? DEFAULT_HOOK_FEE : params.hookFee;
-        if (poolLpFee > 100_000 || hookFee > 1_000_000) revert InvalidFee();
+        uint24 poolLpFee = DEFAULT_POOL_LP_FEE;
+        uint24 hookFee = DEFAULT_HOOK_FEE;
 
         bytes memory tokenData = abi.encode(
             UERC20Metadata({
@@ -223,6 +224,9 @@ contract CcaLaunchFactory {
         );
 
         invites.registerAuction(auction, token, msg.sender);
+        bytes32[] memory codes = new bytes32[](1);
+        codes[0] = params.inviteCode;
+        invites.seedInvites(auction, msg.sender, codes);
 
         Distribution memory dist =
             Distribution({strategy: address(lbpStrategy), amount: uint128(supply), configData: configData});
