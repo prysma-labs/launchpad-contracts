@@ -8,6 +8,10 @@ import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol"
 import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {HookMiner} from "@uniswap/v4-periphery/src/utils/HookMiner.sol";
 import {AddressConstants} from "hookmate/constants/AddressConstants.sol";
+import {Permit2Deployer} from "hookmate/artifacts/Permit2.sol";
+import {V4PoolManagerDeployer} from "hookmate/artifacts/V4PoolManager.sol";
+import {V4PositionManagerDeployer} from "hookmate/artifacts/V4PositionManager.sol";
+import {V4RouterDeployer} from "hookmate/artifacts/V4Router.sol";
 
 import {LiquidityLauncher} from "liquidity-launcher/src/LiquidityLauncher.sol";
 import {LBPStrategy} from "liquidity-launcher/src/strategies/lbp/LBPStrategy.sol";
@@ -35,19 +39,38 @@ contract DeployCcaScript is Script {
         address deployer = vm.addr(deployerKey);
 
         address permit2 = AddressConstants.getPermit2Address();
-        address poolManager = AddressConstants.getPoolManagerAddress(block.chainid);
-        address positionManager = AddressConstants.getPositionManagerAddress(block.chainid);
-        require(poolManager != address(0) && positionManager != address(0), "missing v4 addresses");
+        address poolManager;
+        address positionManager;
+        address swapRouter;
 
         uint256 startBlock = block.number;
 
+        if (block.chainid == 31337 && permit2.code.length == 0) {
+            vm.etch(permit2, Permit2Deployer.deploy().code);
+        }
+
         vm.startBroadcast(deployerKey);
 
+        if (block.chainid == 31337) {
+            poolManager = V4PoolManagerDeployer.deploy(deployer);
+            positionManager = V4PositionManagerDeployer.deploy(
+                poolManager, permit2, 300_000, address(0), address(0)
+            );
+            swapRouter = V4RouterDeployer.deploy(poolManager, permit2);
+        } else {
+            poolManager = AddressConstants.getPoolManagerAddress(block.chainid);
+            positionManager = AddressConstants.getPositionManagerAddress(block.chainid);
+            swapRouter = AddressConstants.getV4SwapRouterAddress(block.chainid);
+            require(
+                poolManager != address(0) && positionManager != address(0), "missing v4 addresses"
+            );
+        }
+
         address launcherAddr = vm.envOr("LIQUIDITY_LAUNCHER", address(0));
-        if (launcherAddr == address(0)) {
+        if (launcherAddr == address(0) || block.chainid == 31337) {
             if (block.chainid == 31337) {
                 launcherAddr = address(new LiquidityLauncher(IAllowanceTransfer(permit2)));
-            } else {
+            } else if (launcherAddr == address(0)) {
                 launcherAddr = UNISWAP_LIQUIDITY_LAUNCHER_V3;
             }
         }
@@ -86,7 +109,7 @@ contract DeployCcaScript is Script {
         distributor.setHook(address(feeHook));
 
         address uerc20FactoryAddr = vm.envOr("UERC20_FACTORY", address(0));
-        if (uerc20FactoryAddr == address(0)) {
+        if (block.chainid == 31337 || uerc20FactoryAddr == address(0)) {
             uerc20FactoryAddr = address(new UERC20Factory());
         }
 
@@ -117,6 +140,10 @@ contract DeployCcaScript is Script {
             address(registry),
             address(inviteHook),
             uerc20FactoryAddr,
+            permit2,
+            poolManager,
+            positionManager,
+            swapRouter,
             startBlock
         );
 
@@ -141,6 +168,10 @@ contract DeployCcaScript is Script {
         address registry,
         address inviteHook,
         address uerc20Factory,
+        address permit2,
+        address poolManager,
+        address positionManager,
+        address swapRouter,
         uint256 startBlock
     ) internal {
         string memory key = "cca";
@@ -154,6 +185,10 @@ contract DeployCcaScript is Script {
         vm.serializeAddress(key, "inviteRegistry", registry);
         vm.serializeAddress(key, "inviteValidationHook", inviteHook);
         vm.serializeAddress(key, "uerc20Factory", uerc20Factory);
+        vm.serializeAddress(key, "permit2", permit2);
+        vm.serializeAddress(key, "poolManager", poolManager);
+        vm.serializeAddress(key, "positionManager", positionManager);
+        vm.serializeAddress(key, "swapRouter", swapRouter);
         string memory ccaJson = vm.serializeUint(key, "startBlock", startBlock);
 
         string memory name;

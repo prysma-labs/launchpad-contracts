@@ -1,15 +1,31 @@
 {
+  "network": "anvil",
   "chainId": 31337,
-  "startBlock": 1,
-  "poolManager": "0x0D9BAf34817Fccd3b3068768E5d20542B66424A5",
-  "positionManager": "0x90aAE8e3C8dF1d226431D0C2C7feAaa775fAF86C",
-  "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-  "swapRouter": "0xB61598fa7E856D43384A8fcBBAbF2Aa6aa044FfC",
-  "feeEscrow": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-  "positionLocker": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-  "hook": "0xb8bb78d53f6C079dCf7080868ED2d68394792A44",
-  "factory": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
-  "protocolTreasury": "0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38",
-  "protocolShareBps": 1000,
-  "nativeCurrency": "ETH"
+  "rpc": "http://127.0.0.1:8545",
+  "explorer": "",
+  "status": "deployed",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "uniswap": {
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "poolManager": "0x5BD46E1FaA70f83F5d6A5d69F7e63429332101d2",
+    "positionManager": "0x06d93d1e64FE48cC1fb7D9CcFB15911A339D32fd",
+    "swapRouter": "0x1DE7a495740839ec51c3331080e20ECd45ceafF1",
+    "universalRouter": "0x0000000000000000000000000000000000000000",
+    "stateView": "0x0000000000000000000000000000000000000000",
+    "quoter": "0x0000000000000000000000000000000000000000",
+    "liquidityLauncher": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+  },
+  "cca": {
+    "factory": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "lbpStrategy": "0x06658a35Dc7cB1211a6912725B117a725C422000",
+    "launcher": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "ccaFactory": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "positionRecipient": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "feeDistributor": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "feeHook": "0xe4B7CC3cc58dc27d05C553E9b28A4E19063FA044",
+    "inviteRegistry": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+    "inviteValidationHook": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+    "uerc20Factory": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "startBlock": 0
+  }
 }
