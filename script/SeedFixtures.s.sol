@@ -114,14 +114,26 @@ contract SeedFixturesScript is Script {
         lbp = ILBPStrategy(json.readAddress(".cca.lbpStrategy"));
     }
 
-    function _punksFailed() internal pure returns (CcaLaunchFactory.CreateParams memory) {
+    function _extra(string memory key, bytes memory fallbackExtra)
+        internal
+        view
+        returns (bytes memory)
+    {
+        string memory path = "./deployments/anvil-x-extras.json";
+        if (vm.exists(path)) {
+            return bytes(vm.readFile(path).readString(string.concat(".", key)));
+        }
+        return fallbackExtra;
+    }
+
+    function _punksFailed() internal view returns (CcaLaunchFactory.CreateParams memory) {
         return _launch(
             "Punks",
             "PUNKS",
             "Prysma-flavored Punks",
             "ipfs://bafkreigj7zufqtfn3qyzxzysajwkpci5ebhc4xbubeed2vldqojbq5bzza",
             "",
-            PUNKS_EXTRA,
+            _extra("punks", PUNKS_EXTRA),
             4,
             100 ether,
             keccak256("failed-invite"),
@@ -129,14 +141,14 @@ contract SeedFixturesScript is Script {
         );
     }
 
-    function _virtuosoGrad() internal pure returns (CcaLaunchFactory.CreateParams memory) {
+    function _virtuosoGrad() internal view returns (CcaLaunchFactory.CreateParams memory) {
         return _launch(
             "Virtuoso Club",
             "VIRTUOSO",
             "Experiment for web3 chess",
             "ipfs://bafkreie4fazbsjq6piob4akopxxk22umzjeyc35t3lt4jas3n6b2cklici",
             "https://virtuoso.club/",
-            VIRTUOSO_EXTRA,
+            _extra("virtuoso", VIRTUOSO_EXTRA),
             4,
             0.001 ether,
             keccak256("grad-invite"),
@@ -144,14 +156,14 @@ contract SeedFixturesScript is Script {
         );
     }
 
-    function _prysmaLive() internal pure returns (CcaLaunchFactory.CreateParams memory) {
+    function _prysmaLive() internal view returns (CcaLaunchFactory.CreateParams memory) {
         return _launch(
             "Prysma",
             "PRYSMA",
             "New kind of launchpad",
             "ipfs://bafkreid7qybjikrzndvhonc2rmkkp2gpvm3el5ktmkwp423jb33hasjjb4",
             "https://prysma.trade/",
-            PRYSMA_EXTRA,
+            _extra("prysma", PRYSMA_EXTRA),
             10_000,
             1 ether,
             keccak256("live-invite"),
@@ -159,14 +171,14 @@ contract SeedFixturesScript is Script {
         );
     }
 
-    function _lootEnding() internal pure returns (CcaLaunchFactory.CreateParams memory) {
+    function _lootEnding() internal view returns (CcaLaunchFactory.CreateParams memory) {
         return _launch(
             "Loot Genie",
             "LOOT",
             "Gambling onchain",
             "ipfs://bafkreicgeiv2z5suw5yqop22ygfy6gbuq7fhom3lz35h43kel62msajpl4",
             "https://lootgenie.com/",
-            LOOT_EXTRA,
+            _extra("loot", LOOT_EXTRA),
             100,
             1 ether,
             keccak256("ending-invite"),

@@ -64,6 +64,8 @@ for wallet in "${FUND_WALLETS[@]}"; do
   echo "funded $wallet with 100 ETH"
 done
 
+python3 scripts/sign-anvil-x-extras.py
+
 seed "createEnded()"
 cast rpc anvil_mine 1 --rpc-url "$RPC_URL" >/dev/null
 seed "bidGrad()"
