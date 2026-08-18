@@ -18,16 +18,24 @@ CREATOR = os.environ.get(
     "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
 )
 
+# handle, user_id, avatar, wallet (None = ANVIL creator)
 FIXTURES = {
-    "punks": ("uneebagh", "69832154", None),
+    "punks": ("uneebagh", "69832154", None, None),
     "megapot": (
         "uneebagh",
         "69832154",
         "https://pbs.twimg.com/profile_images/2081802220605980672/2ERTQR1q_bigger.jpg",
+        None,
     ),
-    "prysma": ("prysmaHQ", "1962206370071220224", None),
-    "virtuoso": ("virtuoso_club", "1664456225176670210", None),
-    "loot": ("lootgenie", "1838988064234020864", None),
+    "prysma": ("prysmaHQ", "1962206370071220224", None, None),
+    "virtuoso": ("virtuoso_club", "1664456225176670210", None, None),
+    "loot": ("lootgenie", "1838988064234020864", None, None),
+    "maxmarket": (
+        "_maxtalks",
+        "1875602263114387456",
+        "https://pbs.twimg.com/profile_images/1899943050362970114/bOFt7r-I_bigger.jpg",
+        "0x530bf56676Af5bdf5B0104Db8CD3d4588AA80735",
+    ),
 }
 
 
@@ -55,13 +63,13 @@ def sign_token(secret: str, payload: dict) -> str:
 def main() -> None:
     secret = load_secret()
     extras = {}
-    for key, (handle, user_id, avatar) in FIXTURES.items():
+    for key, (handle, user_id, avatar, wallet) in FIXTURES.items():
         token = sign_token(
             secret,
             {
                 "x_handle": handle,
                 "x_user_id": user_id,
-                "wallet_address": CREATOR,
+                "wallet_address": wallet or CREATOR,
                 "iat": 1,
             },
         )

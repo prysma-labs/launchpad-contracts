@@ -8,9 +8,11 @@ RPC_URL="${RPC_URL:-http://127.0.0.1:8545}"
 unset UERC20_FACTORY LIQUIDITY_LAUNCHER
 WEB_DEPLOY="${WEB_DEPLOY:-../launchpad/web/src/lib/deployments/anvil.json}"
 NOW="$(date +%s)"
-# Genesis must be earlier than Punks so we can stamp that auction at now-1d.
+# Max Market is stamped 30d ago; Punks / Virtuoso / Megapot are 1d ago.
+# Genesis must be earlier than Max so we can warp forward only.
+MAX_CREATED_AT="$((NOW - 2592000))"
 PUNKS_CREATED_AT="$((NOW - 86400))"
-ANVIL_GENESIS_AT="$((NOW - 172800))"
+ANVIL_GENESIS_AT="$((NOW - 2764800))"
 
 if [[ "${ANVIL_ALREADY_RUNNING:-}" != "1" ]]; then
   if command -v lsof >/dev/null 2>&1; then
@@ -23,6 +25,7 @@ if [[ "${ANVIL_ALREADY_RUNNING:-}" != "1" ]]; then
 
   anvil --host 127.0.0.1 --port 8545 --chain-id 31337 \
     --timestamp "$ANVIL_GENESIS_AT" \
+    --gas-limit 50000000 \
     --block-base-fee-per-gas 1000000000 \
     --gas-price 1000000000 \
     --silent >/tmp/launchpad-anvil.log 2>&1 &
@@ -50,9 +53,13 @@ PRIVATE_KEY="$ANVIL_KEY" forge script script/DeployCca.s.sol:DeployCcaScript \
 
 seed() {
   local multiplier=130
-  if [[ "$1" == "bidFailed()" || "$1" == "bidMegapot()" || "$1" == "bidGrad()" ]]; then
+  if [[ "$1" == "bidFailed()" || "$1" == "bidMegapot()" || "$1" == "bidGrad()" || "$1" == "bidMaxMarket()" ]]; then
     multiplier=200
   fi
+  # Keep automine + a fixed 1 gwei price so 50+ bid txs cannot stall
+  # in the mempool after EIP-1559 base fee moves.
+  cast rpc evm_setIntervalMining 0 --rpc-url "$RPC_URL" >/dev/null || true
+  cast rpc evm_setAutomine true --rpc-url "$RPC_URL" >/dev/null || true
   cast rpc anvil_setNextBlockBaseFeePerGas 0x3b9aca00 --rpc-url "$RPC_URL" >/dev/null || true
   cast rpc evm_mine --rpc-url "$RPC_URL" >/dev/null || true
   PRIVATE_KEY="$ANVIL_KEY" forge script script/SeedFixtures.s.sol:SeedFixturesScript \
@@ -61,6 +68,7 @@ seed() {
     --private-key "$ANVIL_KEY" \
     --sig "$1" \
     --gas-estimate-multiplier "$multiplier" \
+    --with-gas-price 1000000000 \
     -vv
 }
 
@@ -87,24 +95,61 @@ python3 scripts/sign-anvil-x-extras.py
 
 CHAIN_TS="$(cast block latest --rpc-url "$RPC_URL" --field timestamp)"
 CHAIN_TS="$((CHAIN_TS))"
-if (( CHAIN_TS > PUNKS_CREATED_AT )); then
-  echo "Anvil time is already past the Punks create stamp (${PUNKS_CREATED_AT})." >&2
-  echo "Start a fresh node (omit ANVIL_ALREADY_RUNNING) so genesis can be 2d ago." >&2
+if (( CHAIN_TS > MAX_CREATED_AT )); then
+  echo "Anvil time is already past the Max Market create stamp (${MAX_CREATED_AT})." >&2
+  echo "Start a fresh node (omit ANVIL_ALREADY_RUNNING) so genesis can be 32d ago." >&2
   exit 1
 fi
-# Punks / Virtuoso / Megapot start blocks land 1 day ago (UI "Created 1d ago").
-cast rpc evm_setNextBlockTimestamp "$PUNKS_CREATED_AT" --rpc-url "$RPC_URL" >/dev/null
+
+# Max Market at now-30d so it can graduate, then trade across 30 days.
+cast rpc evm_setNextBlockTimestamp "$MAX_CREATED_AT" --rpc-url "$RPC_URL" >/dev/null
+seed "createMaxMarket()"
+cast rpc anvil_mine 1 --rpc-url "$RPC_URL" >/dev/null
+seed "seedMaxMarketDistributors()"
+seed "bidMaxMarket()"
+cast rpc anvil_mine 250 --rpc-url "$RPC_URL" >/dev/null
+seed "finalizeMaxMarket()"
+seed "deployMaxMarketTrader()"
+
+TRADER="$(tr -d '[:space:]' < deployments/anvil-max-trader.txt)"
+if [[ -z "$TRADER" || "$TRADER" == "0x0000000000000000000000000000000000000000" ]]; then
+  echo "max market trader address missing" >&2
+  exit 1
+fi
+echo "trading Max Market (Token B curve) via $TRADER"
+for d in $(seq 0 28); do
+  ts=$((MAX_CREATED_AT + 86400 * (d + 1)))
+  cast rpc evm_setNextBlockTimestamp "$ts" --rpc-url "$RPC_URL" >/dev/null
+  buy="$(cast call "$TRADER" "dayBuyWei(uint256)(uint256)" "$d" --rpc-url "$RPC_URL" | awk '{print $1}')"
+  echo "  day $((d + 1))/30 buy ${buy}"
+  cast send "$TRADER" "runDay(uint256)" "$d" \
+    --value "$buy" \
+    --private-key "$ANVIL_KEY" \
+    --rpc-url "$RPC_URL" \
+    --gas-price 1000000000 \
+    >/dev/null
+done
+
+# Day 29 of Max trading already landed at now-1d. Next block is Punks / Virtuoso / Megapot.
 seed "createEnded()"
 cast rpc anvil_mine 1 --rpc-url "$RPC_URL" >/dev/null
 seed "bidGrad()"
 seed "bidFailed()"
 seed "bidMegapot()"
-# Punks / Megapot last 250 blocks so all bids fit; mine past end before finalize.
 cast rpc anvil_mine 250 --rpc-url "$RPC_URL" >/dev/null
 seed "finalizeEnded()"
-# Jump to wall-clock now so live / ending auctions are current.
+
+# Jump to wall-clock now: last Token B day + live / ending auctions.
 cast rpc evm_setNextBlockTimestamp "$(date +%s)" --rpc-url "$RPC_URL" >/dev/null
 cast rpc evm_mine --rpc-url "$RPC_URL" >/dev/null
+buy="$(cast call "$TRADER" "dayBuyWei(uint256)(uint256)" 29 --rpc-url "$RPC_URL" | awk '{print $1}')"
+echo "  day 30/30 buy ${buy}"
+cast send "$TRADER" "runDay(uint256)" 29 \
+  --value "$buy" \
+  --private-key "$ANVIL_KEY" \
+  --rpc-url "$RPC_URL" \
+  --gas-price 1000000000 \
+  >/dev/null
 seed "createLive()"
 cast rpc anvil_mine 1 --rpc-url "$RPC_URL" >/dev/null
 seed "bidLive()"
@@ -172,4 +217,4 @@ echo
 echo "Anvil is running. Import account #0 into your wallet:"
 echo "  0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 echo "Point the web app at Anvil with NEXT_PUBLIC_LAUNCHPAD_NETWORK=anvil"
-echo "Invite codes: failed-invite (Punks) | megapot-invite (Megapot) | grad-invite (Virtuoso) | prysma (Prysma) | ending-invite (Loot Genie)"
+echo "Invite codes: failed-invite (Punks) | megapot-invite (Megapot) | grad-invite (Virtuoso) | prysma (Prysma) | max-invite / max-dist-1..5 (Max Market) | ending-invite (Loot Genie)"
