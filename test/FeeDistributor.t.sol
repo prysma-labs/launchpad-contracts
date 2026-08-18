@@ -8,20 +8,32 @@ import {FeeDistributor} from "../src/fee/FeeDistributor.sol";
 import {IReferralSource} from "../src/fee/IReferralSource.sol";
 
 contract MockReferrals is IReferralSource {
-    mapping(address => mapping(address => uint256)) public volumes;
+    mapping(uint256 => uint256) public weights;
+    mapping(uint256 => address) public auctions;
+    mapping(uint256 => address) public owners;
     mapping(address => uint256) public totals;
 
-    function set(address auction, address referrer, uint256 volume) external {
-        totals[auction] = totals[auction] - volumes[auction][referrer] + volume;
-        volumes[auction][referrer] = volume;
+    function set(uint256 tokenId, address auction, address owner, uint256 weight) external {
+        totals[auction] = totals[auction] - weights[tokenId] + weight;
+        weights[tokenId] = weight;
+        auctions[tokenId] = auction;
+        owners[tokenId] = owner;
     }
 
-    function referralVolume(address auction, address referrer) external view returns (uint256) {
-        return volumes[auction][referrer];
+    function referrerWeight(uint256 tokenId) external view returns (uint256) {
+        return weights[tokenId];
     }
 
-    function totalReferralVolume(address auction) external view returns (uint256) {
+    function totalReferrerWeight(address auction) external view returns (uint256) {
         return totals[auction];
+    }
+
+    function referrerAuction(uint256 tokenId) external view returns (address) {
+        return auctions[tokenId];
+    }
+
+    function referrerOwner(uint256 tokenId) external view returns (address) {
+        return owners[tokenId];
     }
 }
 
@@ -45,7 +57,7 @@ contract FeeDistributorTest is Test {
 
         vm.prank(registrar);
         distributor.registerPool(poolId, auction, creator);
-        referrals.set(auction, referrer, 1 ether);
+        referrals.set(1, auction, referrer, 1);
     }
 
     function test_notifyAndClaim_split() public {
@@ -53,7 +65,6 @@ contract FeeDistributorTest is Test {
         vm.prank(hook);
         distributor.notifyFee{value: 10 ether}(poolId, address(0), 10 ether);
 
-        // 20% creator, 5% platform, 75% referrers
         vm.prank(creator);
         uint256 c = distributor.claimCreator(poolId, address(0));
         assertEq(c, 2 ether);
@@ -64,13 +75,13 @@ contract FeeDistributorTest is Test {
         assertEq(p, 0.5 ether);
 
         vm.prank(referrer);
-        uint256 r = distributor.claimReferrer(poolId, address(0));
+        uint256 r = distributor.claimReferrer(poolId, address(0), 1);
         assertEq(r, 7.5 ether);
     }
 
-    function test_claimReferrer_proRataByVolume() public {
-        referrals.set(auction, referrer, 1 ether);
-        referrals.set(auction, referrerBig, 100 ether);
+    function test_claimReferrer_byTierWeight() public {
+        referrals.set(1, auction, referrer, 1);
+        referrals.set(2, auction, referrerBig, 35);
 
         vm.deal(hook, 10.1 ether);
         vm.prank(hook);
@@ -78,11 +89,11 @@ contract FeeDistributorTest is Test {
 
         uint256 referrerPool = (10.1 ether * 7_500) / 10_000;
         vm.prank(referrerBig);
-        uint256 big = distributor.claimReferrer(poolId, address(0));
-        assertEq(big, (referrerPool * 100) / 101);
+        uint256 big = distributor.claimReferrer(poolId, address(0), 2);
+        assertEq(big, (referrerPool * 35) / 36);
 
         vm.prank(referrer);
-        uint256 small = distributor.claimReferrer(poolId, address(0));
-        assertEq(small, referrerPool - big);
+        uint256 small = distributor.claimReferrer(poolId, address(0), 1);
+        assertEq(small, (referrerPool * 1) / 36);
     }
 }

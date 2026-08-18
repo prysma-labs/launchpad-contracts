@@ -15,8 +15,7 @@ contract InviteValidationHook is IValidationHook {
     }
 
     /// @inheritdoc IValidationHook
-    /// @dev hookData is 32 bytes (inbound invite) or 64 bytes (inbound + outbound).
-    /// On a first bid, the outbound hash is minted as the bidder's shareable invite.
+    /// @dev hookData is 32 bytes (inbound invite) or 64 bytes (inbound + ignored outbound).
     function validate(uint256, uint128 amount, address owner, address, bytes calldata hookData) external {
         bytes32 code;
         bytes32 outbound;

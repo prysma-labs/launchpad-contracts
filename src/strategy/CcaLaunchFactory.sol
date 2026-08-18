@@ -21,7 +21,6 @@ import {ILBPStrategy} from "liquidity-launcher/src/interfaces/ILBPStrategy.sol";
 
 import {AuctionParameters} from "continuous-clearing-auction/interfaces/IContinuousClearingAuction.sol";
 import {ConstantsLib} from "continuous-clearing-auction/libraries/ConstantsLib.sol";
-import {FixedPoint96} from "continuous-clearing-auction/libraries/FixedPoint96.sol";
 
 import {UERC20Metadata} from "@uniswap/uerc20-factory/src/libraries/UERC20MetadataLibrary.sol";
 
@@ -39,8 +38,12 @@ contract CcaLaunchFactory {
     uint24 public constant DEFAULT_HOOK_FEE = 4_000;
     int24 public constant DEFAULT_TICK_SPACING = 60;
     uint16 public constant DEFAULT_AUCTION_SUPPLY_BPS = 5_000;
-    uint256 public constant DEFAULT_AUCTION_TICK_SPACING = 100 << FixedPoint96.RESOLUTION;
-    uint256 public constant DEFAULT_FLOOR_PRICE = 1000 << FixedPoint96.RESOLUTION;
+    /// @dev FROGE Crowd Launch tick (Q96). ~5.24e-12 ETH/token.
+    uint256 public constant DEFAULT_AUCTION_TICK_SPACING = 0x05c37a5313eae06f;
+    /// @dev FROGE Crowd Launch floor (Q96). ~5.24e-10 ETH/token.
+    uint256 public constant DEFAULT_FLOOR_PRICE = 0x2405bc873c7bfab5c;
+    /// @dev Unsold auction tokens + unused reserved LP after migrate, matching Uniswap CCA/LBP.
+    address public constant UNSOLD_TOKENS_RECIPIENT = 0x000000000000000000000000000000000000dEaD;
     uint128 public constant TOTAL_SUPPLY = 1_000_000_000 ether;
 
     ILiquidityLauncher public immutable launcher;
@@ -168,14 +171,14 @@ contract CcaLaunchFactory {
 
         uint64 startBlock = uint64(block.number);
         uint64 endBlock = startBlock + params.auctionBlocks;
-        uint64 claimBlock = endBlock + 10;
+        uint64 claimBlock = endBlock;
         uint64 migrationBlock = endBlock + 1;
 
         bytes memory auctionStepsData = _buildSteps(params.auctionBlocks);
 
         AuctionParameters memory auctionParams = AuctionParameters({
             currency: address(0),
-            tokensRecipient: msg.sender,
+            tokensRecipient: UNSOLD_TOKENS_RECIPIENT,
             fundsRecipient: address(lbpStrategy),
             startBlock: startBlock,
             endBlock: endBlock,
@@ -203,7 +206,7 @@ contract CcaLaunchFactory {
             currency: address(0),
             migrationBlock: migrationBlock,
             reservedTokenAmountForLP: reservedForLp,
-            recipient: msg.sender,
+            recipient: UNSOLD_TOKENS_RECIPIENT,
             positionRecipient: positionRecipient,
             poolParameters: PoolParameters({fee: poolLpFee, tickSpacing: DEFAULT_TICK_SPACING, hook: address(feeHook)}),
             positionDefinitions: abi.encode(defs),

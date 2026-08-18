@@ -6,8 +6,8 @@ Defaults (overridable at launch where noted):
 |---|---|---|
 | Token split | **50%** auction / **50%** LP | `auctionSupplyBps`; remainder reserved for the post-migrate position |
 | Pool LP fee | **0.1%** | Accrues to the locked LP NFT; autocompounded back into the pool via `CompoundingClaimRecipient` |
-| Hook fee | **0.4%** | Taken by `LaunchFeeHook` on the unspecified swap amount (`afterSwap`) |
-| Hook fee split | **20%** creator / **75%** referrers / **5%** platform | Fixed in `FeeDistributor`; referrers share pro-rata by referred bid volume |
+| Hook fee | **0.4%** | Taken by `LaunchFeeHook` in **ETH** on both sides: buys via `beforeSwap` (specified ETH), sells via `afterSwap` (ETH out) |
+| Hook fee split | **20%** creator / **75%** distributors / **5%** platform | Fixed in `FeeDistributor`. How the 75% is split is in [How does distribution work](distribution.md). |
 
 ## Example — $10M trading volume
 
@@ -22,4 +22,4 @@ Hook fee split of that **$40,000**:
 
 - Creator claims **$8,000** (20%)
 - Platform claims **$2,000** (5%)
-- Referrer pool gets **$30,000** (75%). Shared pro-rata across referrers by the bid volume they brought — if Alice referred **$1** of bids and Bob referred **$100**, Bob claims **$30,000 × 100/101** and Alice claims the rest.
+- Distributor pool gets **$30,000** (75%), split by [tier weight](distribution.md).

@@ -19,10 +19,15 @@ CREATOR = os.environ.get(
 )
 
 FIXTURES = {
-    "punks": ("uneebagh", "69832154"),
-    "prysma": ("prysmaHQ", "1962206370071220224"),
-    "virtuoso": ("virtuoso_club", "1664456225176670210"),
-    "loot": ("lootgenie", "1838988064234020864"),
+    "punks": ("uneebagh", "69832154", None),
+    "megapot": (
+        "uneebagh",
+        "69832154",
+        "https://pbs.twimg.com/profile_images/2081802220605980672/2ERTQR1q_bigger.jpg",
+    ),
+    "prysma": ("prysmaHQ", "1962206370071220224", None),
+    "virtuoso": ("virtuoso_club", "1664456225176670210", None),
+    "loot": ("lootgenie", "1838988064234020864", None),
 }
 
 
@@ -50,7 +55,7 @@ def sign_token(secret: str, payload: dict) -> str:
 def main() -> None:
     secret = load_secret()
     extras = {}
-    for key, (handle, user_id) in FIXTURES.items():
+    for key, (handle, user_id, avatar) in FIXTURES.items():
         token = sign_token(
             secret,
             {
@@ -64,7 +69,7 @@ def main() -> None:
             {
                 "v": 1,
                 "xVerificationToken": token,
-                "xAvatarUrl": f"https://unavatar.io/twitter/{handle}",
+                "xAvatarUrl": avatar or f"https://unavatar.io/twitter/{handle}",
             },
             separators=(",", ":"),
         )

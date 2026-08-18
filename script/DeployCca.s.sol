@@ -26,6 +26,7 @@ import {FeeDistributor} from "../src/fee/FeeDistributor.sol";
 import {LaunchFeeHook} from "../src/fee/LaunchFeeHook.sol";
 import {InviteRegistry} from "../src/invite/InviteRegistry.sol";
 import {InviteValidationHook} from "../src/invite/InviteValidationHook.sol";
+import {ReferrerNFT} from "../src/nft/ReferrerNFT.sol";
 import {CcaLaunchFactory} from "../src/strategy/CcaLaunchFactory.sol";
 
 /// @notice Deploys CCA/LBP launchpad stack for anvil or Base Sepolia.
@@ -91,12 +92,17 @@ contract DeployCcaScript is Script {
 
         FeeDistributor distributor = new FeeDistributor();
         InviteRegistry registry = new InviteRegistry();
+        string memory nftBaseUri = vm.envOr("REFERRER_NFT_BASE_URI", string("http://localhost:3001/api/nft/"));
+        ReferrerNFT referrerNft = new ReferrerNFT(nftBaseUri);
+        referrerNft.setRegistry(address(registry));
+        registry.setReferrerNft(address(referrerNft));
         InviteValidationHook inviteHook = new InviteValidationHook(registry);
         registry.setValidationHook(address(inviteHook));
 
         bytes memory hookArgs = abi.encode(poolManager, address(lbp), address(distributor), DEFAULT_HOOK_FEE);
         uint160 flags = uint160(
-            Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG
+            Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG
+                | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG
         );
         (address hookAddr, bytes32 salt) =
             HookMiner.find(CREATE2_DEPLOYER, flags, type(LaunchFeeHook).creationCode, hookArgs);
@@ -105,7 +111,7 @@ contract DeployCcaScript is Script {
         );
         require(address(feeHook) == hookAddr, "hook addr");
 
-        distributor.setReferrals(address(registry));
+        distributor.setReferrals(address(referrerNft));
         distributor.setHook(address(feeHook));
 
         address uerc20FactoryAddr = vm.envOr("UERC20_FACTORY", address(0));
@@ -124,6 +130,7 @@ contract DeployCcaScript is Script {
             uerc20FactoryAddr
         );
         registry.setFactory(address(factory));
+        registry.setOperator(vm.envOr("INVITE_OPERATOR", deployer));
         distributor.setRegistrar(address(factory));
 
         vm.stopBroadcast();
@@ -138,6 +145,7 @@ contract DeployCcaScript is Script {
             address(distributor),
             address(feeHook),
             address(registry),
+            address(referrerNft),
             address(inviteHook),
             uerc20FactoryAddr,
             permit2,
@@ -154,6 +162,7 @@ contract DeployCcaScript is Script {
         console2.log("FeeDistributor", address(distributor));
         console2.log("LaunchFeeHook", address(feeHook));
         console2.log("InviteRegistry", address(registry));
+        console2.log("ReferrerNFT", address(referrerNft));
     }
 
     function _writeSidecar(
@@ -166,6 +175,7 @@ contract DeployCcaScript is Script {
         address distributor,
         address feeHook,
         address registry,
+        address referrerNft,
         address inviteHook,
         address uerc20Factory,
         address permit2,
@@ -183,6 +193,7 @@ contract DeployCcaScript is Script {
         vm.serializeAddress(key, "feeDistributor", distributor);
         vm.serializeAddress(key, "feeHook", feeHook);
         vm.serializeAddress(key, "inviteRegistry", registry);
+        vm.serializeAddress(key, "referrerNft", referrerNft);
         vm.serializeAddress(key, "inviteValidationHook", inviteHook);
         vm.serializeAddress(key, "uerc20Factory", uerc20Factory);
         vm.serializeAddress(key, "permit2", permit2);

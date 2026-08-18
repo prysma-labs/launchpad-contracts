@@ -7,6 +7,10 @@ RPC_URL="${RPC_URL:-http://127.0.0.1:8545}"
 # Never reuse Sepolia addresses on a fresh Anvil chain.
 unset UERC20_FACTORY LIQUIDITY_LAUNCHER
 WEB_DEPLOY="${WEB_DEPLOY:-../launchpad/web/src/lib/deployments/anvil.json}"
+NOW="$(date +%s)"
+# Genesis must be earlier than Punks so we can stamp that auction at now-1d.
+PUNKS_CREATED_AT="$((NOW - 86400))"
+ANVIL_GENESIS_AT="$((NOW - 172800))"
 
 if [[ "${ANVIL_ALREADY_RUNNING:-}" != "1" ]]; then
   if command -v lsof >/dev/null 2>&1; then
@@ -18,6 +22,7 @@ if [[ "${ANVIL_ALREADY_RUNNING:-}" != "1" ]]; then
   fi
 
   anvil --host 127.0.0.1 --port 8545 --chain-id 31337 \
+    --timestamp "$ANVIL_GENESIS_AT" \
     --block-base-fee-per-gas 1000000000 \
     --gas-price 1000000000 \
     --silent >/tmp/launchpad-anvil.log 2>&1 &
@@ -44,11 +49,18 @@ PRIVATE_KEY="$ANVIL_KEY" forge script script/DeployCca.s.sol:DeployCcaScript \
   -vv
 
 seed() {
+  local multiplier=130
+  if [[ "$1" == "bidFailed()" || "$1" == "bidMegapot()" || "$1" == "bidGrad()" ]]; then
+    multiplier=200
+  fi
+  cast rpc anvil_setNextBlockBaseFeePerGas 0x3b9aca00 --rpc-url "$RPC_URL" >/dev/null || true
+  cast rpc evm_mine --rpc-url "$RPC_URL" >/dev/null || true
   PRIVATE_KEY="$ANVIL_KEY" forge script script/SeedFixtures.s.sol:SeedFixturesScript \
     --rpc-url "$RPC_URL" \
     --broadcast \
     --private-key "$ANVIL_KEY" \
     --sig "$1" \
+    --gas-estimate-multiplier "$multiplier" \
     -vv
 }
 
@@ -64,13 +76,35 @@ for wallet in "${FUND_WALLETS[@]}"; do
   echo "funded $wallet with 100 ETH"
 done
 
+WEB_DIR="$(cd ../launchpad/web && pwd)"
+if [[ -f "$WEB_DIR/scripts/clear-network-db.mjs" ]]; then
+  echo "clearing launchpad DB for Anvil (chain 31337)"
+  (cd "$WEB_DIR" && node scripts/clear-network-db.mjs anvil) \
+    || echo "warn: could not clear launchpad DB (check SUPABASE_DB_URL in web/.env.local)"
+fi
+
 python3 scripts/sign-anvil-x-extras.py
 
+CHAIN_TS="$(cast block latest --rpc-url "$RPC_URL" --field timestamp)"
+CHAIN_TS="$((CHAIN_TS))"
+if (( CHAIN_TS > PUNKS_CREATED_AT )); then
+  echo "Anvil time is already past the Punks create stamp (${PUNKS_CREATED_AT})." >&2
+  echo "Start a fresh node (omit ANVIL_ALREADY_RUNNING) so genesis can be 2d ago." >&2
+  exit 1
+fi
+# Punks / Virtuoso / Megapot start blocks land 1 day ago (UI "Created 1d ago").
+cast rpc evm_setNextBlockTimestamp "$PUNKS_CREATED_AT" --rpc-url "$RPC_URL" >/dev/null
 seed "createEnded()"
 cast rpc anvil_mine 1 --rpc-url "$RPC_URL" >/dev/null
 seed "bidGrad()"
-cast rpc anvil_mine 20 --rpc-url "$RPC_URL" >/dev/null
+seed "bidFailed()"
+seed "bidMegapot()"
+# Punks / Megapot last 250 blocks so all bids fit; mine past end before finalize.
+cast rpc anvil_mine 250 --rpc-url "$RPC_URL" >/dev/null
 seed "finalizeEnded()"
+# Jump to wall-clock now so live / ending auctions are current.
+cast rpc evm_setNextBlockTimestamp "$(date +%s)" --rpc-url "$RPC_URL" >/dev/null
+cast rpc evm_mine --rpc-url "$RPC_URL" >/dev/null
 seed "createLive()"
 cast rpc anvil_mine 1 --rpc-url "$RPC_URL" >/dev/null
 seed "bidLive()"
@@ -108,6 +142,7 @@ out = {
         "feeDistributor": c["feeDistributor"],
         "feeHook": c["feeHook"],
         "inviteRegistry": c["inviteRegistry"],
+        "referrerNft": c["referrerNft"],
         "inviteValidationHook": c["inviteValidationHook"],
         "uerc20Factory": c["uerc20Factory"],
         "startBlock": c["startBlock"],
@@ -119,6 +154,15 @@ web = Path("../launchpad/web/src/lib/deployments/anvil.json")
 web.parent.mkdir(parents=True, exist_ok=True)
 web.write_text(text)
 print("wrote", web)
+
+for src, dst in [
+    ("out/ReferrerNFT.sol/ReferrerNFT.json", "../launchpad/web/src/lib/abi/ReferrerNFT.json"),
+    ("out/FeeDistributor.sol/FeeDistributor.json", "../launchpad/web/src/lib/abi/FeeDistributor.json"),
+    ("out/InviteRegistry.sol/InviteRegistry.json", "../launchpad/web/src/lib/abi/InviteRegistry.json"),
+]:
+    abi = json.loads(Path(src).read_text())["abi"]
+    Path(dst).write_text(json.dumps(abi, indent=2) + "\n")
+    print("wrote", dst)
 PY
 
 # Tick the block clock after fixtures exist so Ending Soon counts down.
@@ -128,4 +172,4 @@ echo
 echo "Anvil is running. Import account #0 into your wallet:"
 echo "  0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 echo "Point the web app at Anvil with NEXT_PUBLIC_LAUNCHPAD_NETWORK=anvil"
-echo "Invite codes: failed-invite (Punks) | grad-invite (Virtuoso) | live-invite (Prysma) | ending-invite (Loot Genie)"
+echo "Invite codes: failed-invite (Punks) | megapot-invite (Megapot) | grad-invite (Virtuoso) | prysma (Prysma) | ending-invite (Loot Genie)"

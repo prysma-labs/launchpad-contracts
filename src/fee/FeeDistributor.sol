@@ -8,7 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IReferralSource} from "./IReferralSource.sol";
 
 /// @notice Accrues hook fees and pays creator / referrers / platform via claim.
-/// @dev Split: 20% creator, 75% referrers (pro-rata by referred bid volume), 5% platform.
+/// @dev Split: 20% creator, 75% referrers (NFT tier weights), 5% platform.
 contract FeeDistributor {
     using SafeERC20 for IERC20;
 
@@ -32,7 +32,7 @@ contract FeeDistributor {
     mapping(PoolId => mapping(address => uint256)) public creatorOwed;
     mapping(PoolId => mapping(address => uint256)) public platformOwed;
     mapping(PoolId => mapping(address => uint256)) public referrerPool;
-    mapping(PoolId => mapping(address => mapping(address => uint256))) public referrerClaimed;
+    mapping(PoolId => mapping(address => mapping(uint256 => uint256))) public referrerClaimed;
 
     error NotAuthorized();
     error NotHook();
@@ -133,35 +133,38 @@ contract FeeDistributor {
         emit Claimed(poolId, currency, msg.sender, amount);
     }
 
-    function claimReferrer(PoolId poolId, address currency) external returns (uint256 amount) {
+    function claimReferrer(PoolId poolId, address currency, uint256 tokenId) external returns (uint256 amount) {
         PoolInfo storage info = pools[poolId];
         if (!info.registered) revert NotRegistered();
+        if (referrals.referrerOwner(tokenId) != msg.sender) revert NothingToClaim();
+        if (referrals.referrerAuction(tokenId) != info.auction) revert NothingToClaim();
 
-        uint256 total = referrals.totalReferralVolume(info.auction);
+        uint256 total = referrals.totalReferrerWeight(info.auction);
         if (total == 0) revert NothingToClaim();
 
-        uint256 weight = referrals.referralVolume(info.auction, msg.sender);
+        uint256 weight = referrals.referrerWeight(tokenId);
         if (weight == 0) revert NothingToClaim();
 
         uint256 entitled = (referrerPool[poolId][currency] * weight) / total;
-        uint256 already = referrerClaimed[poolId][currency][msg.sender];
+        uint256 already = referrerClaimed[poolId][currency][tokenId];
         if (entitled <= already) revert NothingToClaim();
 
         amount = entitled - already;
-        referrerClaimed[poolId][currency][msg.sender] = entitled;
+        referrerClaimed[poolId][currency][tokenId] = entitled;
         _pay(currency, msg.sender, amount);
         emit Claimed(poolId, currency, msg.sender, amount);
     }
 
-    function pendingReferrer(PoolId poolId, address currency, address referrer) external view returns (uint256) {
+    function pendingReferrer(PoolId poolId, address currency, uint256 tokenId) external view returns (uint256) {
         PoolInfo storage info = pools[poolId];
         if (!info.registered) return 0;
-        uint256 total = referrals.totalReferralVolume(info.auction);
+        if (referrals.referrerAuction(tokenId) != info.auction) return 0;
+        uint256 total = referrals.totalReferrerWeight(info.auction);
         if (total == 0) return 0;
-        uint256 weight = referrals.referralVolume(info.auction, referrer);
+        uint256 weight = referrals.referrerWeight(tokenId);
         if (weight == 0) return 0;
         uint256 entitled = (referrerPool[poolId][currency] * weight) / total;
-        uint256 already = referrerClaimed[poolId][currency][referrer];
+        uint256 already = referrerClaimed[poolId][currency][tokenId];
         return entitled > already ? entitled - already : 0;
     }
 

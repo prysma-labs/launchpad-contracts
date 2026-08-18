@@ -263,11 +263,13 @@ EOF
 - [Home](README.md)
 # Concepts
 - [Fees](concepts/fees.md)
+- [How does distribution work](concepts/distribution.md)
 - [Verified creators](concepts/verified-creators.md)
 - [Invite codes](concepts/invite-codes.md)
 # Contracts
 - [CcaLaunchFactory](src/strategy/CcaLaunchFactory.sol/contract.CcaLaunchFactory.md)
 - [InviteRegistry](src/invite/InviteRegistry.sol/contract.InviteRegistry.md)
+- [ReferrerNFT](src/nft/ReferrerNFT.sol/contract.ReferrerNFT.md)
 - [InviteValidationHook](src/invite/InviteValidationHook.sol/contract.InviteValidationHook.md)
 - [LaunchFeeHook](src/fee/LaunchFeeHook.sol/contract.LaunchFeeHook.md)
 - [FeeDistributor](src/fee/FeeDistributor.sol/contract.FeeDistributor.md)

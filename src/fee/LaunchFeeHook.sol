@@ -12,13 +12,16 @@ import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {SafeCast} from "@uniswap/v4-core/src/libraries/SafeCast.sol";
 import {FullMath} from "@uniswap/v4-core/src/libraries/FullMath.sol";
 import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import {BeforeSwapDelta, toBeforeSwapDelta} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
 
 import {InitializerHook} from "liquidity-launcher/src/periphery/hooks/InitializerHook.sol";
 import {CurrencySettler} from "@openzeppelin/uniswap-hooks/src/utils/CurrencySettler.sol";
 
 import {FeeDistributor} from "./FeeDistributor.sol";
 
-/// @notice LBP-compatible InitializerHook that charges an afterSwap hook fee into FeeDistributor.
+/// @notice LBP-compatible InitializerHook that charges a hook fee in ETH into FeeDistributor.
+/// @dev ETH is always currency0. Buys take 0.4% of specified ETH in beforeSwap; sells take 0.4% of
+///      unspecified ETH out in afterSwap. Token fees are never taken.
 contract LaunchFeeHook is InitializerHook, IUnlockCallback {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -68,17 +71,38 @@ contract LaunchFeeHook is InitializerHook, IUnlockCallback {
             afterAddLiquidity: false,
             beforeRemoveLiquidity: false,
             afterRemoveLiquidity: false,
-            beforeSwap: false,
+            beforeSwap: true,
             afterSwap: true,
             beforeDonate: false,
             afterDonate: false,
-            beforeSwapReturnDelta: false,
+            beforeSwapReturnDelta: true,
             afterSwapReturnDelta: true,
             afterAddLiquidityReturnDelta: false,
             afterRemoveLiquidityReturnDelta: false
         });
     }
 
+    /// @dev When ETH is specified (exact-in buy / exact-out sell), take 0.4% of that ETH.
+    function _beforeSwap(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata)
+        internal
+        override
+        returns (bytes4, BeforeSwapDelta, uint24)
+    {
+        if (!_ethIsSpecified(key, params)) {
+            return (IHooks.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
+        }
+
+        uint256 specifiedAbs =
+            params.amountSpecified < 0 ? uint256(-params.amountSpecified) : uint256(params.amountSpecified);
+        uint256 feeAmount = _ethFee(key.toId(), specifiedAbs);
+        if (feeAmount == 0) return (IHooks.beforeSwap.selector, toBeforeSwapDelta(0, 0), 0);
+
+        key.currency0.take(poolManager, address(this), feeAmount, true);
+        emit HookFee(PoolId.unwrap(key.toId()), sender, feeAmount.toUint128(), 0);
+        return (IHooks.beforeSwap.selector, toBeforeSwapDelta(feeAmount.toInt128(), 0), 0);
+    }
+
+    /// @dev When ETH is unspecified (exact-in sell / exact-out buy), take 0.4% of ETH out/in.
     function _afterSwap(
         address sender,
         PoolKey calldata key,
@@ -86,33 +110,23 @@ contract LaunchFeeHook is InitializerHook, IUnlockCallback {
         BalanceDelta delta,
         bytes calldata
     ) internal override returns (bytes4, int128) {
-        (Currency unspecified, int128 unspecifiedAmount) = (params.amountSpecified < 0 == params.zeroForOne)
-            ? (key.currency1, delta.amount1())
-            : (key.currency0, delta.amount0());
+        if (_ethIsSpecified(key, params)) return (IHooks.afterSwap.selector, 0);
 
-        if (unspecifiedAmount == 0) return (IHooks.afterSwap.selector, 0);
-        if (unspecifiedAmount < 0) unspecifiedAmount = -unspecifiedAmount;
+        int128 ethAmount = delta.amount0();
+        if (ethAmount == 0) return (IHooks.afterSwap.selector, 0);
+        if (ethAmount < 0) ethAmount = -ethAmount;
 
-        uint24 hookFee = feeConfigured[key.toId()] ? hookFeeOf[key.toId()] : defaultHookFee;
-        if (hookFee == 0) return (IHooks.afterSwap.selector, 0);
-        if (hookFee > MAX_HOOK_FEE) revert HookFeeTooLarge();
+        uint256 feeAmount = _ethFee(key.toId(), uint256(uint128(ethAmount)));
+        if (feeAmount == 0) return (IHooks.afterSwap.selector, 0);
 
-        uint256 feeAmount = FullMath.mulDiv(uint256(uint128(unspecifiedAmount)), hookFee, MAX_HOOK_FEE);
-        unspecified.take(poolManager, address(this), feeAmount, true);
-
-        if (unspecified == key.currency0) {
-            emit HookFee(PoolId.unwrap(key.toId()), sender, feeAmount.toUint128(), 0);
-        } else {
-            emit HookFee(PoolId.unwrap(key.toId()), sender, 0, feeAmount.toUint128());
-        }
-
+        key.currency0.take(poolManager, address(this), feeAmount, true);
+        emit HookFee(PoolId.unwrap(key.toId()), sender, feeAmount.toUint128(), 0);
         return (IHooks.afterSwap.selector, feeAmount.toInt128());
     }
 
     function harvest(PoolKey calldata key) external {
-        Currency[] memory currencies = new Currency[](2);
+        Currency[] memory currencies = new Currency[](1);
         currencies[0] = key.currency0;
-        currencies[1] = key.currency1;
         poolManager.unlock(abi.encode(key.toId(), currencies));
     }
 
@@ -124,17 +138,25 @@ contract LaunchFeeHook is InitializerHook, IUnlockCallback {
             uint256 amount = poolManager.balanceOf(address(this), currency.toId());
             if (amount == 0) continue;
 
-            address currencyAddr = Currency.unwrap(currency);
             currency.settle(poolManager, address(this), amount, true);
-            if (currency.isAddressZero()) {
-                currency.take(poolManager, address(this), amount, false);
-                distributor.notifyFee{value: amount}(poolId, address(0), amount);
-            } else {
-                currency.take(poolManager, address(distributor), amount, false);
-                distributor.notifyFee(poolId, currencyAddr, amount);
-            }
+            if (!currency.isAddressZero()) revert InvalidFee();
+            currency.take(poolManager, address(this), amount, false);
+            distributor.notifyFee{value: amount}(poolId, address(0), amount);
         }
         return "";
+    }
+
+    /// @dev Specified currency is currency0 when (amountSpecified < 0) == zeroForOne.
+    function _ethIsSpecified(PoolKey calldata key, SwapParams calldata params) internal pure returns (bool) {
+        if (!key.currency0.isAddressZero()) return false;
+        return params.amountSpecified < 0 == params.zeroForOne;
+    }
+
+    function _ethFee(PoolId poolId, uint256 ethAmount) internal view returns (uint256) {
+        uint24 hookFee = feeConfigured[poolId] ? hookFeeOf[poolId] : defaultHookFee;
+        if (hookFee == 0) return 0;
+        if (hookFee > MAX_HOOK_FEE) revert HookFeeTooLarge();
+        return FullMath.mulDiv(ethAmount, hookFee, MAX_HOOK_FEE);
     }
 
     receive() external payable {}

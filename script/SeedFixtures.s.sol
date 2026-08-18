@@ -5,7 +5,6 @@ import {Script, console2} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 
 import {IContinuousClearingAuction} from "continuous-clearing-auction/interfaces/IContinuousClearingAuction.sol";
-import {FixedPoint96} from "continuous-clearing-auction/libraries/FixedPoint96.sol";
 import {ILBPStrategy} from "liquidity-launcher/src/interfaces/ILBPStrategy.sol";
 import {ILBPInitializer} from "liquidity-launcher/src/interfaces/ILBPInitializer.sol";
 
@@ -21,6 +20,9 @@ contract SeedFixturesScript is Script {
         0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
     uint256 constant ANVIL_1 =
         0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
+    uint256 constant TESTER_1 =
+        0x98eab43565a8e2d51079f1818ef9ce4c0c2f91d4f772768ad81c2fa6a15951ba;
+    address constant TESTER_1_ADDR = 0x530bf56676Af5bdf5B0104Db8CD3d4588AA80735;
 
     /// Base Sepolia Punks `0xE8E9…9df2`
     bytes constant PUNKS_EXTRA =
@@ -34,29 +36,101 @@ contract SeedFixturesScript is Script {
     /// Base Sepolia Loot Genie `0xef3F…CF74`
     bytes constant LOOT_EXTRA =
         '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6Imxvb3RnZW5pZSIsInhfdXNlcl9pZCI6IjE4Mzg5ODgwNjQyMzQwMjA4NjQiLCJ3YWxsZXRfYWRkcmVzcyI6IjB4QmI2ZjM5N2Q5ZDhiZjEyOGREYTYwNzAwNTM5N0Y1MzlCNDNDRDcxMCIsImlhdCI6MTc4NjY4ODU5Mn0.VhNycdzGvWQ6KOm50abfMLUjXjM-Ex_436wj_10pRkU"}';
+    /// Base Sepolia Megapot `0x27Cb…BB15`
+    bytes constant MEGAPOT_EXTRA =
+        '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6InVuZWViYWdoIiwieF91c2VyX2lkIjoiNjk4MzIxNTQiLCJ3YWxsZXRfYWRkcmVzcyI6IjB4QmI2ZjM5N2Q5ZDhiZjEyOGREYTYwNzAwNTM5N0Y1MzlCNDNDRDcxMCIsImlhdCI6MTc4Njc0NzM1OH0.UDAi-cmhR-hHeBNYllYf1sYs9wSHTb4Scr6iXktvz1s","xAvatarUrl":"https://pbs.twimg.com/profile_images/2081802220605980672/2ERTQR1q_bigger.jpg"}';
 
+    /// @dev Punks / Megapot are stamped 1 day ago by anvil-up.sh (`evm_setNextBlockTimestamp`).
     function createEnded() public {
         (CcaLaunchFactory factory,, uint256 creatorKey,,) = _load();
         vm.startBroadcast(creatorKey);
         factory.createLaunch(_punksFailed());
         factory.createLaunch(_virtuosoGrad());
+        factory.createLaunch(_megapotFailed());
         vm.stopBroadcast();
     }
 
+    /// @dev 25 owners, 242.5124 ETH total, over the 100 ETH target.
+    ///      Tester `0x530b…0735` bids 10 ETH.
     function bidGrad() public {
-        _bid(2, keccak256("grad-invite"), 1 ether);
+        (CcaLaunchFactory factory,, uint256 creatorKey,,) = _load();
+        address auction = factory.getLaunch(2).auction;
+        require(auction != address(0), "no auction");
+        bytes32 invite = keccak256("grad-invite");
+
+        vm.startBroadcast(creatorKey);
+        for (uint256 i = 0; i < 24; i++) {
+            address bidder = vm.addr(uint256(keccak256(abi.encodePacked("virtuoso-bidder", i + 1))));
+            uint128 amount = _virtuosoBidAmount(i);
+            IContinuousClearingAuction(auction).submitBid{value: amount, gas: 2_000_000}(
+                _punksMaxPrice(i), amount, bidder, abi.encode(invite)
+            );
+        }
+        vm.stopBroadcast();
+
+        vm.startBroadcast(TESTER_1);
+        IContinuousClearingAuction(auction).submitBid{value: 10 ether, gas: 2_000_000}(
+            _maxPrice(), 10 ether, TESTER_1_ADDR, abi.encode(invite)
+        );
+        vm.stopBroadcast();
+    }
+
+    /// @dev 57 owners, 68.13742 ETH total, under the 100 ETH target.
+    function bidFailed() public {
+        (CcaLaunchFactory factory,, uint256 creatorKey,,) = _load();
+        address auction = factory.getLaunch(1).auction;
+        require(auction != address(0), "no auction");
+        bytes32 invite = keccak256("failed-invite");
+
+        vm.startBroadcast(creatorKey);
+        for (uint256 i = 0; i < 57; i++) {
+            address bidder = vm.addr(uint256(keccak256(abi.encodePacked("punks-bidder", i + 1))));
+            uint128 amount = _punksBidAmount(i);
+            IContinuousClearingAuction(auction).submitBid{value: amount, gas: 2_000_000}(
+                _punksMaxPrice(i), amount, bidder, abi.encode(invite)
+            );
+        }
+        vm.stopBroadcast();
+    }
+
+    /// @dev 13 owners, 28.124135 ETH total, under the 50 ETH target.
+    ///      Tester `0x530b…0735` bids 0.4 ETH so the UI refund path can be exercised.
+    function bidMegapot() public {
+        (CcaLaunchFactory factory,, uint256 creatorKey,,) = _load();
+        address auction = factory.getLaunch(3).auction;
+        require(auction != address(0), "no auction");
+        bytes32 invite = keccak256("megapot-invite");
+
+        vm.startBroadcast(creatorKey);
+        for (uint256 i = 0; i < 12; i++) {
+            address bidder = vm.addr(uint256(keccak256(abi.encodePacked("megapot-bidder", i + 1))));
+            uint128 amount = _megapotBidAmount(i);
+            IContinuousClearingAuction(auction).submitBid{value: amount, gas: 2_000_000}(
+                _punksMaxPrice(i), amount, bidder, abi.encode(invite)
+            );
+        }
+        vm.stopBroadcast();
+
+        vm.startBroadcast(TESTER_1);
+        IContinuousClearingAuction(auction).submitBid{value: 0.4 ether, gas: 2_000_000}(
+            _maxPrice(), 0.4 ether, TESTER_1_ADDR, abi.encode(invite)
+        );
+        vm.stopBroadcast();
     }
 
     function finalizeEnded() public {
         (CcaLaunchFactory factory, ILBPStrategy lbp, uint256 creatorKey,,) = _load();
         address failedAuction = factory.getLaunch(1).auction;
         address gradAuction = factory.getLaunch(2).auction;
+        address megapotAuction = factory.getLaunch(3).auction;
 
         vm.startBroadcast(creatorKey);
         IContinuousClearingAuction(failedAuction).checkpoint();
         IContinuousClearingAuction(gradAuction).checkpoint();
+        IContinuousClearingAuction(megapotAuction).checkpoint();
         require(!IContinuousClearingAuction(failedAuction).isGraduated(), "failed graduated");
         require(IContinuousClearingAuction(gradAuction).isGraduated(), "grad not graduated");
+        require(!IContinuousClearingAuction(megapotAuction).isGraduated(), "megapot graduated");
         lbp.migrate(ILBPInitializer(gradAuction));
         vm.stopBroadcast();
     }
@@ -69,7 +143,7 @@ contract SeedFixturesScript is Script {
     }
 
     function bidLive() public {
-        _bid(3, keccak256("live-invite"), 0.05 ether);
+        _bid(4, keccak256("prysma"), 0.05 ether);
     }
 
     function createEnding() public {
@@ -78,10 +152,11 @@ contract SeedFixturesScript is Script {
         factory.createLaunch(_lootEnding());
         vm.stopBroadcast();
         console2.log("fixtures");
-        console2.log("  1 Failed Raise  Punks/PUNKS          invite=failed-invite");
-        console2.log("  2 Graduated     Virtuoso Club        invite=grad-invite");
-        console2.log("  3 Live Auction  Prysma/PRYSMA        invite=live-invite");
-        console2.log("  4 Ending Soon   Loot Genie/LOOT      invite=ending-invite");
+        console2.log("  1 Failed Raise  Punks/PUNKS          68.13742 ETH / 57 bids  invite=failed-invite");
+        console2.log("  2 Graduated     Virtuoso Club        242.5124 ETH / 25 bids  invite=grad-invite");
+        console2.log("  3 Failed Raise  Megapot/MEGAPOT      28.124135 ETH / 13 bids invite=megapot-invite");
+        console2.log("  4 Live Auction  Prysma/PRYSMA        invite=prysma");
+        console2.log("  5 Ending Soon   Loot Genie/LOOT      invite=ending-invite");
     }
 
     function _bid(uint256 id, bytes32 invite, uint128 amount) internal {
@@ -134,10 +209,25 @@ contract SeedFixturesScript is Script {
             "ipfs://bafkreigj7zufqtfn3qyzxzysajwkpci5ebhc4xbubeed2vldqojbq5bzza",
             "",
             _extra("punks", PUNKS_EXTRA),
-            4,
+            250,
             100 ether,
             keccak256("failed-invite"),
             1
+        );
+    }
+
+    function _megapotFailed() internal view returns (CcaLaunchFactory.CreateParams memory) {
+        return _launch(
+            "Megapot",
+            "MEGAPOT",
+            "Onchain lottery that grows over time",
+            "ipfs://bafkreidfv2t4bp7qtl2oa5c53dzmgflubsrecldtzptwanh7ld2vmy5l5a",
+            "https://megapot.io/",
+            _extra("megapot", MEGAPOT_EXTRA),
+            250,
+            50 ether,
+            keccak256("megapot-invite"),
+            5
         );
     }
 
@@ -149,8 +239,8 @@ contract SeedFixturesScript is Script {
             "ipfs://bafkreie4fazbsjq6piob4akopxxk22umzjeyc35t3lt4jas3n6b2cklici",
             "https://virtuoso.club/",
             _extra("virtuoso", VIRTUOSO_EXTRA),
-            4,
-            0.001 ether,
+            250,
+            100 ether,
             keccak256("grad-invite"),
             2
         );
@@ -165,8 +255,8 @@ contract SeedFixturesScript is Script {
             "https://prysma.trade/",
             _extra("prysma", PRYSMA_EXTRA),
             10_000,
-            1 ether,
-            keccak256("live-invite"),
+            100 ether,
+            keccak256("prysma"),
             3
         );
     }
@@ -215,9 +305,42 @@ contract SeedFixturesScript is Script {
         });
     }
 
+    uint256 constant BID_TICKS_ABOVE_FLOOR = 1_000_000;
+    uint256 constant FLOOR_PRICE = 0x2405bc873c7bfab5c;
+    uint256 constant TICK_SPACING_Q96 = 0x05c37a5313eae06f;
+
+    function _punksMaxPrice(uint256 i) internal pure returns (uint256) {
+        return FLOOR_PRICE + TICK_SPACING_Q96 * (BID_TICKS_ABOVE_FLOOR + i);
+    }
+
+    function _punksBidAmount(uint256 i) internal pure returns (uint128) {
+        if (i < 12) return 0.25 ether;
+        if (i < 24) return 0.5 ether;
+        if (i < 36) return 1 ether;
+        if (i < 46) return 1.5 ether;
+        if (i < 52) return 2 ether;
+        if (i < 55) return 3 ether;
+        if (i == 55) return 5 ether;
+        return 6.13742 ether;
+    }
+
+    function _virtuosoBidAmount(uint256 i) internal pure returns (uint128) {
+        if (i < 6) return 5 ether;
+        if (i < 12) return 8 ether;
+        if (i < 17) return 10 ether;
+        if (i < 21) return 15 ether;
+        if (i < 23) return 20 ether;
+        return 4.5124 ether;
+    }
+
+    function _megapotBidAmount(uint256 i) internal pure returns (uint128) {
+        if (i < 4) return 1.5 ether;
+        if (i < 8) return 2 ether;
+        if (i < 11) return 3 ether;
+        return 4.724135 ether;
+    }
+
     function _maxPrice() internal pure returns (uint256) {
-        uint256 floor = 1000 << FixedPoint96.RESOLUTION;
-        uint256 tickSpacing = 100 << FixedPoint96.RESOLUTION;
-        return floor + tickSpacing;
+        return FLOOR_PRICE + TICK_SPACING_Q96 * BID_TICKS_ABOVE_FLOOR;
     }
 }

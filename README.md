@@ -9,7 +9,7 @@ Launches use Uniswap’s [CCA](https://developers.uniswap.org/docs/liquidity/liq
 Flow in this stack:
 
 1. **Launch** — `CcaLaunchFactory` mints a fixed-supply Uniswap `UERC20` (with required X verification in `extraData`) and opens a CCA via [LiquidityLauncher → LBPStrategy](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies). The creator then mints invite codes on `InviteRegistry`.
-2. **Bid** — Participants `submitBid` with invite `hookData`, checked by `InviteValidationHook` / `InviteRegistry` (referral weight is recorded for later fee claims).
+2. **Bid** — Participants `submitBid` with invite `hookData`, checked by `InviteValidationHook` / `InviteRegistry`. Non-creator inviters accrue volume on `ReferrerNFT` (mint at Scout).
 3. **Migrate** — After the auction ends, anyone can call LBP [`migrate`](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies) to seed an ETH/token v4 pool at the discovered price, with `LaunchFeeHook` attached.
 4. **Trade & claim** — Swaps accrue hook fees; `harvest` pushes balances to `FeeDistributor` for creator / referrer / platform claims. Auction winners claim tokens after the configured claim block.
 
@@ -17,7 +17,8 @@ Flow in this stack:
 
 | Concept | What it covers |
 |---|---|
-| [Fees](concepts/fees.md) | Auction/LP split, pool LP fee, hook fee, claim split, and a worked volume example |
+| [Fees](concepts/fees.md) | Auction/LP split, hook fee, 20/75/5 claims |
+| [How does distribution work](concepts/distribution.md) | Distributor NFTs, tiers, and how the 75% pool is split |
 | [Verified creators](concepts/verified-creators.md) | Why launches require a public creator identity, and how the proof is stored in UERC20 `extraData` |
 | [Invite codes](concepts/invite-codes.md) | Invite-gated bidding, referral weight, and how codes map to `hookData` |
 
@@ -26,10 +27,11 @@ Flow in this stack:
 | Contract | Role |
 |---|---|
 | [`CcaLaunchFactory`](src/strategy/CcaLaunchFactory.sol/contract.CcaLaunchFactory.md) | Create UERC20 + CCA/LBP launch (requires `extraData` X verification) |
-| [`InviteRegistry`](src/invite/InviteRegistry.sol/contract.InviteRegistry.md) | Invite codes + referral weights |
+| [`InviteRegistry`](src/invite/InviteRegistry.sol/contract.InviteRegistry.md) | Invite codes + participation |
 | [`InviteValidationHook`](src/invite/InviteValidationHook.sol/contract.InviteValidationHook.md) | CCA bid gate (`hookData`) |
+| [`ReferrerNFT`](src/nft/ReferrerNFT.sol/contract.ReferrerNFT.md) | Transferable distributor claim NFT |
 | [`LaunchFeeHook`](src/fee/LaunchFeeHook.sol/contract.LaunchFeeHook.md) | Post-migrate swap hook fee |
 | [`FeeDistributor`](src/fee/FeeDistributor.sol/contract.FeeDistributor.md) | Claimable 20/75/5 fee split |
-| [`IReferralSource`](src/fee/IReferralSource.sol/interface.IReferralSource.md) | Referral weight interface |
+| [`IReferralSource`](src/fee/IReferralSource.sol/interface.IReferralSource.md) | NFT tier-weight interface |
 
 Upstream Uniswap pieces used at runtime (not in this repo’s `src/`): LiquidityLauncher, LBPStrategy, Continuous Clearing Auction, CompoundingClaimRecipient, UERC20Factory / UERC20.
