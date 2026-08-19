@@ -20,16 +20,12 @@ contract MockReferrals is IReferralSource {
         owners[tokenId] = owner;
     }
 
-    function referrerWeight(uint256 tokenId) external view returns (uint256) {
+    function referrerWeight(uint256 tokenId, address) external view returns (uint256) {
         return weights[tokenId];
     }
 
     function totalReferrerWeight(address auction) external view returns (uint256) {
         return totals[auction];
-    }
-
-    function referrerAuction(uint256 tokenId) external view returns (address) {
-        return auctions[tokenId];
     }
 
     function referrerOwner(uint256 tokenId) external view returns (address) {

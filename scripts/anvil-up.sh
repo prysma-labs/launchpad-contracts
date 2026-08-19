@@ -103,6 +103,7 @@ fi
 
 # Max Market at now-30d so it can graduate, then trade across 30 days.
 cast rpc evm_setNextBlockTimestamp "$MAX_CREATED_AT" --rpc-url "$RPC_URL" >/dev/null
+seed "mintRecruits()"
 seed "createMaxMarket()"
 cast rpc anvil_mine 1 --rpc-url "$RPC_URL" >/dev/null
 seed "seedMaxMarketDistributors()"

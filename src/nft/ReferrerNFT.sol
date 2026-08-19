@@ -6,16 +6,21 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 import {IReferralSource} from "../fee/IReferralSource.sol";
 
-/// @notice Transferable distributor claim NFT. Minted at Scout; art/tier upgrade with volume.
+/// @notice Transferable distributor NFT. Minted separately as Recruit (10k).
+/// @dev Holding a token makes you a distributor on every auction. Referred
+///      volume is tracked per auction; Scout+ weight earns hook-fee share.
+///      Recruit has weight 0 and does not accrue fees.
 contract ReferrerNFT is ERC721, IReferralSource {
     using Strings for uint256;
 
+    uint256 public constant MAX_SUPPLY = 10_000;
     uint256 public constant SCOUT_MIN = 0.5 ether;
     uint256 public constant PROMOTER_MIN = 1 ether;
     uint256 public constant ADVOCATE_MIN = 5 ether;
     uint256 public constant AMBASSADOR_MIN = 10 ether;
     uint256 public constant PARTNER_MIN = 25 ether;
 
+    uint256 public constant RECRUIT_WEIGHT = 0;
     uint256 public constant SCOUT_WEIGHT = 1;
     uint256 public constant PROMOTER_WEIGHT = 2;
     uint256 public constant ADVOCATE_WEIGHT = 10;
@@ -24,6 +29,7 @@ contract ReferrerNFT is ERC721, IReferralSource {
 
     enum Tier {
         None,
+        Recruit,
         Scout,
         Promoter,
         Advocate,
@@ -36,12 +42,13 @@ contract ReferrerNFT is ERC721, IReferralSource {
     string public baseURI;
     uint256 public nextTokenId = 1;
 
-    mapping(address => mapping(address => uint256)) public pendingVolume;
+    mapping(address => uint256) public tokenOfHolder;
+    mapping(address => bool) public minted;
     mapping(address => mapping(address => uint256)) public tokenOf;
-    mapping(uint256 => address) public auctionOf;
     mapping(uint256 => address) public issuerOf;
+    mapping(uint256 => mapping(address => uint256)) public auctionVolume;
+    mapping(uint256 => mapping(address => uint256)) public auctionWeight;
     mapping(uint256 => uint256) public volumeOf;
-    mapping(uint256 => uint256) public weightOf;
     mapping(address => uint256) public totalWeightOf;
     mapping(address => uint256[]) private _owned;
     mapping(uint256 => uint256) private _ownedIndex;
@@ -49,9 +56,13 @@ contract ReferrerNFT is ERC721, IReferralSource {
     error AlreadySet();
     error NotAuthorized();
     error ZeroAddress();
+    error AlreadyMinted();
+    error SoldOut();
+    error NoNft();
 
     event RegistrySet(address indexed registry);
     event BaseURISet(string baseURI);
+    event Minted(uint256 indexed tokenId, address indexed to);
     event VolumeCredited(uint256 indexed tokenId, address indexed auction, address indexed issuer, uint256 volume, Tier tier);
     event MetadataUpdate(uint256 indexed tokenId);
 
@@ -73,50 +84,61 @@ contract ReferrerNFT is ERC721, IReferralSource {
         emit BaseURISet(baseURI_);
     }
 
+    /// @notice Mint a Recruit NFT to the caller. One per wallet, 10_000 max.
+    function mint() external returns (uint256) {
+        return _mintTo(msg.sender);
+    }
+
+    /// @notice Owner mint for fixtures / allocation.
+    function mintTo(address to) external returns (uint256) {
+        if (msg.sender != owner) revert NotAuthorized();
+        return _mintTo(to);
+    }
+
+    function _mintTo(address to) internal returns (uint256 tokenId) {
+        if (to == address(0)) revert ZeroAddress();
+        if (minted[to] || tokenOfHolder[to] != 0) revert AlreadyMinted();
+        if (nextTokenId > MAX_SUPPLY) revert SoldOut();
+        tokenId = nextTokenId++;
+        minted[to] = true;
+        tokenOfHolder[to] = tokenId;
+        issuerOf[tokenId] = to;
+        _safeMint(to, tokenId);
+        emit Minted(tokenId, to);
+        emit MetadataUpdate(tokenId);
+    }
+
+    /// @notice Bind the issuer's NFT to an auction so later volume credits it.
+    function bind(address auction, address issuer) external {
+        if (msg.sender != registry) revert NotAuthorized();
+        uint256 tokenId = tokenOfHolder[issuer];
+        if (tokenId == 0) revert NoNft();
+        if (tokenOf[auction][issuer] == 0) tokenOf[auction][issuer] = tokenId;
+    }
+
     function credit(address auction, address issuer, uint128 amount) external {
         if (msg.sender != registry) revert NotAuthorized();
         if (amount == 0) return;
 
         uint256 tokenId = tokenOf[auction][issuer];
         if (tokenId == 0) {
-            uint256 pending = pendingVolume[auction][issuer] + amount;
-            pendingVolume[auction][issuer] = pending;
-            if (pending < SCOUT_MIN) return;
-            pendingVolume[auction][issuer] = 0;
-            _mintDistributor(auction, issuer, pending);
-            return;
+            tokenId = tokenOfHolder[issuer];
+            if (tokenId == 0) return;
+            tokenOf[auction][issuer] = tokenId;
         }
 
-        _addVolume(tokenId, amount);
-    }
+        uint256 newVolume = auctionVolume[tokenId][auction] + amount;
+        auctionVolume[tokenId][auction] = newVolume;
+        volumeOf[tokenId] += amount;
 
-    function _mintDistributor(address auction, address issuer, uint256 volume) internal {
-        uint256 tokenId = nextTokenId++;
-        tokenOf[auction][issuer] = tokenId;
-        auctionOf[tokenId] = auction;
-        issuerOf[tokenId] = issuer;
-        volumeOf[tokenId] = volume;
-        (, uint256 weight) = tierOf(volume);
-        weightOf[tokenId] = weight;
-        totalWeightOf[auction] += weight;
-        _safeMint(issuer, tokenId);
-        emit VolumeCredited(tokenId, auction, issuer, volume, _tier(volume));
-        emit MetadataUpdate(tokenId);
-    }
-
-    function _addVolume(uint256 tokenId, uint128 amount) internal {
-        uint256 oldVolume = volumeOf[tokenId];
-        uint256 newVolume = oldVolume + amount;
-        volumeOf[tokenId] = newVolume;
-        (, uint256 oldWeight) = tierOf(oldVolume);
+        (, uint256 oldWeight) = tierOf(newVolume - amount);
         (, uint256 newWeight) = tierOf(newVolume);
         if (newWeight != oldWeight) {
-            address auction = auctionOf[tokenId];
             totalWeightOf[auction] = totalWeightOf[auction] - oldWeight + newWeight;
-            weightOf[tokenId] = newWeight;
+            auctionWeight[tokenId][auction] = newWeight;
             emit MetadataUpdate(tokenId);
         }
-        emit VolumeCredited(tokenId, auctionOf[tokenId], issuerOf[tokenId], newVolume, _tier(newVolume));
+        emit VolumeCredited(tokenId, auction, issuer, newVolume, _tier(newVolume));
     }
 
     function tierOf(uint256 volume) public pure returns (Tier t, uint256 weight) {
@@ -125,31 +147,37 @@ contract ReferrerNFT is ERC721, IReferralSource {
         if (volume >= ADVOCATE_MIN) return (Tier.Advocate, ADVOCATE_WEIGHT);
         if (volume >= PROMOTER_MIN) return (Tier.Promoter, PROMOTER_WEIGHT);
         if (volume >= SCOUT_MIN) return (Tier.Scout, SCOUT_WEIGHT);
-        return (Tier.None, 0);
+        return (Tier.Recruit, RECRUIT_WEIGHT);
     }
 
     function tier(uint256 tokenId) external view returns (Tier) {
+        _requireOwned(tokenId);
         return _tier(volumeOf[tokenId]);
+    }
+
+    function tierOfAuction(uint256 tokenId, address auction) external view returns (Tier) {
+        _requireOwned(tokenId);
+        return _tier(auctionVolume[tokenId][auction]);
     }
 
     function _tier(uint256 volume) internal pure returns (Tier t) {
         (t,) = tierOf(volume);
     }
 
-    function referrerWeight(uint256 tokenId) external view returns (uint256) {
-        return weightOf[tokenId];
+    function referrerWeight(uint256 tokenId, address auction) external view returns (uint256) {
+        return auctionWeight[tokenId][auction];
     }
 
     function totalReferrerWeight(address auction) external view returns (uint256) {
         return totalWeightOf[auction];
     }
 
-    function referrerAuction(uint256 tokenId) external view returns (address) {
-        return auctionOf[tokenId];
-    }
-
     function referrerOwner(uint256 tokenId) external view returns (address) {
         return ownerOf(tokenId);
+    }
+
+    function hasNft(address account) external view returns (bool) {
+        return tokenOfHolder[account] != 0;
     }
 
     function tokensOfOwner(address account) external view returns (uint256[] memory) {
@@ -163,10 +191,14 @@ contract ReferrerNFT is ERC721, IReferralSource {
 
     function _update(address to, uint256 tokenId, address auth) internal override returns (address from) {
         from = super._update(to, tokenId, auth);
-        if (from != address(0) && from != to) _removeOwned(from, tokenId);
+        if (from != address(0) && from != to) {
+            _removeOwned(from, tokenId);
+            if (tokenOfHolder[from] == tokenId) tokenOfHolder[from] = 0;
+        }
         if (to != address(0) && from != to) {
             _ownedIndex[tokenId] = _owned[to].length;
             _owned[to].push(tokenId);
+            if (tokenOfHolder[to] == 0) tokenOfHolder[to] = tokenId;
         }
     }
 

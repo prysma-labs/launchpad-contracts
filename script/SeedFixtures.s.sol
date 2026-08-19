@@ -10,6 +10,7 @@ import {ILBPInitializer} from "liquidity-launcher/src/interfaces/ILBPInitializer
 
 import {CcaLaunchFactory} from "../src/strategy/CcaLaunchFactory.sol";
 import {InviteRegistry} from "../src/invite/InviteRegistry.sol";
+import {ReferrerNFT} from "../src/nft/ReferrerNFT.sol";
 import {MaxMarketTrader} from "./MaxMarketTrader.sol";
 
 /// @notice Seeds Anvil with live / ending / failed / graduated auctions.
@@ -25,6 +26,7 @@ contract SeedFixturesScript is Script {
     uint256 constant TESTER_1 =
         0x98eab43565a8e2d51079f1818ef9ce4c0c2f91d4f772768ad81c2fa6a15951ba;
     address constant TESTER_1_ADDR = 0x530bf56676Af5bdf5B0104Db8CD3d4588AA80735;
+    address constant MAX_DIST_TESTER = 0x4489C7836eBE6aBf8a95Ad87877E8123e5F20A25;
 
     /// Base Sepolia Punks `0xE8E9…9df2`
     bytes constant PUNKS_EXTRA =
@@ -193,6 +195,28 @@ contract SeedFixturesScript is Script {
         vm.stopBroadcast();
     }
 
+    function mintRecruits() public {
+        (,, uint256 ownerKey,,) = _load();
+        ReferrerNFT nft = _nft();
+        address[7] memory holders = [
+            0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
+            0xBb6f397d9d8bf128dDa607005397F539B43CD710,
+            MAX_DIST_TESTER,
+            _maxDistIssuer(0),
+            _maxDistIssuer(1),
+            _maxDistIssuer(2),
+            _maxDistIssuer(3)
+        ];
+        vm.startBroadcast(ownerKey);
+        for (uint256 i = 0; i < holders.length; i++) {
+            if (nft.tokenOfHolder(holders[i]) == 0 && !nft.minted(holders[i])) {
+                nft.mintTo(holders[i]);
+            }
+        }
+        nft.mintTo(_maxDistIssuer(4));
+        vm.stopBroadcast();
+    }
+
     function seedMaxMarketDistributors() public {
         (CcaLaunchFactory factory,, uint256 operatorKey,,) = _load();
         address auction = factory.getLaunch(ID_MAX).auction;
@@ -269,6 +293,10 @@ contract SeedFixturesScript is Script {
 
     function _registry() internal view returns (InviteRegistry) {
         return InviteRegistry(vm.readFile("./deployments/anvil-cca.json").readAddress(".cca.inviteRegistry"));
+    }
+
+    function _nft() internal view returns (ReferrerNFT) {
+        return ReferrerNFT(vm.readFile("./deployments/anvil-cca.json").readAddress(".cca.referrerNft"));
     }
 
     function _extra(string memory key, bytes memory fallbackExtra)
@@ -382,6 +410,7 @@ contract SeedFixturesScript is Script {
     }
 
     function _maxDistIssuer(uint256 i) internal pure returns (address) {
+        if (i == 0) return MAX_DIST_TESTER;
         return vm.addr(uint256(keccak256(abi.encodePacked("max-dist-issuer", i + 1))));
     }
 

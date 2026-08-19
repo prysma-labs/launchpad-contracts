@@ -137,12 +137,11 @@ contract FeeDistributor {
         PoolInfo storage info = pools[poolId];
         if (!info.registered) revert NotRegistered();
         if (referrals.referrerOwner(tokenId) != msg.sender) revert NothingToClaim();
-        if (referrals.referrerAuction(tokenId) != info.auction) revert NothingToClaim();
 
         uint256 total = referrals.totalReferrerWeight(info.auction);
         if (total == 0) revert NothingToClaim();
 
-        uint256 weight = referrals.referrerWeight(tokenId);
+        uint256 weight = referrals.referrerWeight(tokenId, info.auction);
         if (weight == 0) revert NothingToClaim();
 
         uint256 entitled = (referrerPool[poolId][currency] * weight) / total;
@@ -158,10 +157,9 @@ contract FeeDistributor {
     function pendingReferrer(PoolId poolId, address currency, uint256 tokenId) external view returns (uint256) {
         PoolInfo storage info = pools[poolId];
         if (!info.registered) return 0;
-        if (referrals.referrerAuction(tokenId) != info.auction) return 0;
         uint256 total = referrals.totalReferrerWeight(info.auction);
         if (total == 0) return 0;
-        uint256 weight = referrals.referrerWeight(tokenId);
+        uint256 weight = referrals.referrerWeight(tokenId, info.auction);
         if (weight == 0) return 0;
         uint256 entitled = (referrerPool[poolId][currency] * weight) / total;
         uint256 already = referrerClaimed[poolId][currency][tokenId];

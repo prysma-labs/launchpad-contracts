@@ -9,10 +9,11 @@ import {ReferrerNFT} from "../nft/ReferrerNFT.sol";
 /// - Factory registers each auction and seeds the creator's first invite.
 /// - Only the platform operator may mint more invites (`createInvitesFor`), or
 ///   authorize a wallet to mint for itself via EIP-712 (`createInvites`).
+///   The issuer must hold a ReferrerNFT (or be the auction creator).
 /// - InviteValidationHook calls useInvite on CCA bid; unknown/self invites revert on first bid.
 ///   The auction creator may bid without an invite; those bids get no referral credit.
 ///   Creator-issued invites also get no distributor credit (creator is paid 20% separately).
-/// - Non-creator issuer volume is credited to ReferrerNFT (mint at Scout, claim follows the NFT).
+/// - Non-creator issuer volume is credited to the issuer's Recruit NFT (Scout+ earns fees).
 contract InviteRegistry {
     bytes32 private constant CREATE_INVITES_TYPEHASH = keccak256(
         "CreateInvites(address auction,address issuer,bytes32 codesHash,uint256 nonce,uint256 deadline)"
@@ -47,6 +48,7 @@ contract InviteRegistry {
     error ZeroAddress();
     error Expired();
     error InvalidSignature();
+    error NotDistributor();
 
     event FactorySet(address indexed factory);
     event ValidationHookSet(address indexed hook);
@@ -143,6 +145,7 @@ contract InviteRegistry {
         if (msg.sender != operator) revert NotAuthorized();
         if (creatorOf[auction] == address(0)) revert NotAuthorized();
         if (issuer == address(0)) revert ZeroAddress();
+        _requireDistributor(auction, issuer);
         _createInvites(auction, issuer, codes);
     }
 
@@ -155,10 +158,21 @@ contract InviteRegistry {
     ) external {
         if (block.timestamp > deadline) revert Expired();
         if (creatorOf[auction] == address(0)) revert NotAuthorized();
+        _requireDistributor(auction, msg.sender);
         uint256 nonce = nonces[msg.sender]++;
         bytes32 digest = _hashCreateInvites(auction, msg.sender, codes, nonce, deadline);
         if (_recover(digest, signature) != operator) revert InvalidSignature();
         _createInvites(auction, msg.sender, codes);
+    }
+
+    function _requireDistributor(address auction, address issuer) internal {
+        if (issuer == creatorOf[auction]) return;
+        if (!_holdsNft(issuer)) revert NotDistributor();
+        referrerNft.bind(auction, issuer);
+    }
+
+    function _holdsNft(address account) internal view returns (bool) {
+        return address(referrerNft) != address(0) && referrerNft.hasNft(account);
     }
 
     function _createInvites(
@@ -206,8 +220,14 @@ contract InviteRegistry {
         address issuer = referrerOf[auction][bidder];
         if (issuer == address(0)) {
             issuer = inviteIssuer[auction][code];
-            if (issuer == address(0)) revert InvalidInvite();
-            if (issuer == bidder) revert InvalidInvite();
+            if (issuer == address(0) || issuer == bidder) {
+                if (_holdsNft(bidder)) {
+                    participated[auction][bidder] = true;
+                    emit InviteUsed(auction, bidder, address(0), code, amount);
+                    return;
+                }
+                revert InvalidInvite();
+            }
             referrerOf[auction][bidder] = issuer;
             participated[auction][bidder] = true;
         }

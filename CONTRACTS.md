@@ -27,7 +27,7 @@ Defaults: **50/50** auction/LP · pool LP **0.1%** · hook **0.4%** · platform 
 
 - `CcaLaunchFactory` (mints Uniswap `UERC20` with metadata `description` / `website` / `image` / `extraData`)
 - `InviteRegistry`, `InviteValidationHook`
-- `ReferrerNFT` (mint at 0.5 ETH referred volume; tier/art upgrade with volume)
+- `ReferrerNFT` (10k collection minted as Recruit; Scout+ at 0.5 ETH referred volume; tier/art upgrade with volume)
 - `FeeDistributor`, `LaunchFeeHook` (InitializerHook + ETH hook fee on buy and sell)
 - Uniswap: `LiquidityLauncher`, `UERC20Factory`, `LBPStrategy`, `ContinuousClearingAuctionFactory`, `CompoundingClaimRecipient`
 
