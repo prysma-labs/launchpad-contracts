@@ -27,14 +27,13 @@ FIXTURES = {
         "https://pbs.twimg.com/profile_images/2081802220605980672/2ERTQR1q_bigger.jpg",
         None,
     ),
-    "prysma": ("prysmaHQ", "1962206370071220224", None, None),
     "virtuoso": ("virtuoso_club", "1664456225176670210", None, None),
     "loot": ("lootgenie", "1838988064234020864", None, None),
     "maxmarket": (
         "_maxtalks",
         "1875602263114387456",
         "https://pbs.twimg.com/profile_images/1899943050362970114/bOFt7r-I_bigger.jpg",
-        "0x530bf56676Af5bdf5B0104Db8CD3d4588AA80735",
+        "0x0BbF921421383edE2837d31c535Fb8452D788aE9",
     ),
 }
 

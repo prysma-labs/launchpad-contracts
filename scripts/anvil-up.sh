@@ -78,6 +78,7 @@ FUND_WALLETS=(
   0xBb6f397d9d8bf128dDa607005397F539B43CD710
   0x530bf56676Af5bdf5B0104Db8CD3d4588AA80735
   0x4489C7836eBE6aBf8a95Ad87877E8123e5F20A25
+  0x0BbF921421383edE2837d31c535Fb8452D788aE9
 )
 for wallet in "${FUND_WALLETS[@]}"; do
   cast send "$wallet" --value 100ether --private-key "$ANVIL_KEY" --rpc-url "$RPC_URL" >/dev/null
@@ -151,9 +152,6 @@ cast send "$TRADER" "runDay(uint256)" 29 \
   --rpc-url "$RPC_URL" \
   --gas-price 1000000000 \
   >/dev/null
-seed "createLive()"
-cast rpc anvil_mine 1 --rpc-url "$RPC_URL" >/dev/null
-seed "bidLive()"
 seed "createEnding()"
 
 python3 - <<'PY'
@@ -218,4 +216,4 @@ echo
 echo "Anvil is running. Import account #0 into your wallet:"
 echo "  0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 echo "Point the web app at Anvil with NEXT_PUBLIC_LAUNCHPAD_NETWORK=anvil"
-echo "Invite codes: failed-invite (Punks) | megapot-invite (Megapot) | grad-invite (Virtuoso) | prysma (Prysma) | max-invite / max-dist-1..5 (Max Market) | ending-invite (Loot Genie)"
+echo "Invite codes: failed-invite (Punks) | megapot-invite (Megapot) | grad-invite (Virtuoso) | max-dist-1..5 (Max Market) | ending-invite (Loot Genie)"

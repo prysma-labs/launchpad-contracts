@@ -1,6 +1,7 @@
 # Compiler files
 cache/
 out/
+out-docs/
 
 # Ignores development (and goerli) broadcast logs
 !/broadcast

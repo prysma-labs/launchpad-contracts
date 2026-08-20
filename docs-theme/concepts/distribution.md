@@ -4,7 +4,7 @@ Distributors grow an auction by sharing invite codes. Referred **bid volume** se
 
 A **10,000** collection is minted separately as **Recruit**. Holding one makes you a distributor on every auction — you do not need an invite to join, and you can create codes. Recruit has **weight 0** and does not earn. Referred volume of **0.5 ETH** upgrades the same NFT to **Scout** and fee share starts. Higher volume upgrades the badge and the fee weight.
 
-Wallets without the NFT cannot generate invite codes. Creator-issued invites gate access but never earn this NFT’s fee share (the creator already has the 20% creator claim). See [invite codes](invite-codes.md).
+Wallets without the NFT cannot generate invite codes. If a creator also holds an NFT and issues invites, those codes gate access but never earn this NFT’s fee share (the creator already has the 20% creator claim). See [invite codes](invite-codes.md).
 
 ## How you get paid
 
@@ -44,5 +44,5 @@ Example: one Partner and one Scout share the pool **35 : 1**. If the distributor
 | Contract | Role |
 |---|---|
 | [`ReferrerNFT`](../src/nft/ReferrerNFT.sol/contract.ReferrerNFT.md) | 10k Recruit mint; upgrade tier/art/weight with per-auction volume |
-| [`InviteRegistry`](../src/invite/InviteRegistry.sol/contract.InviteRegistry.md) | Codes and attribution; only NFT holders (or the creator) mint codes |
+| [`InviteRegistry`](../src/invite/InviteRegistry.sol/contract.InviteRegistry.md) | Codes and attribution; only NFT holders mint codes |
 | [`FeeDistributor`](../src/fee/FeeDistributor.sol/contract.FeeDistributor.md) | Holder claims `weight / totalWeight` of the 75% pool |

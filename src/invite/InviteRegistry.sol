@@ -6,10 +6,11 @@ import {ReferrerNFT} from "../nft/ReferrerNFT.sol";
 /// @notice Invite codes and referral attribution.
 /// @dev Deployed once per chain; shared across all auctions (keyed by auction address).
 /// Authority for bid gating + fee attribution (offchain DB is UX-only):
-/// - Factory registers each auction and seeds the creator's first invite.
-/// - Only the platform operator may mint more invites (`createInvitesFor`), or
+/// - Factory registers each auction. Creating a token does not mint a distributor NFT
+///   and does not seed invites for the creator.
+/// - Only the platform operator may mint invites (`createInvitesFor`), or
 ///   authorize a wallet to mint for itself via EIP-712 (`createInvites`).
-///   The issuer must hold a ReferrerNFT (or be the auction creator).
+///   The issuer must hold a ReferrerNFT.
 /// - InviteValidationHook calls useInvite on CCA bid; unknown/self invites revert on first bid.
 ///   The auction creator may bid without an invite; those bids get no referral credit.
 ///   Creator-issued invites also get no distributor credit (creator is paid 20% separately).
@@ -23,7 +24,7 @@ contract InviteRegistry {
     bytes32 private constant NAME_HASH = keccak256("InviteRegistry");
     bytes32 private constant VERSION_HASH = keccak256("1");
 
-    /// @dev CcaLaunchFactory — only caller allowed to registerAuction / seedInvites.
+    /// @dev CcaLaunchFactory — only caller allowed to registerAuction.
     address public factory;
     address public validationHook;
     /// @dev Platform signer. Only this address can mint invites or authorize minting.
@@ -133,6 +134,7 @@ contract InviteRegistry {
         bytes32[] calldata codes
     ) external {
         if (msg.sender != factory) revert NotAuthorized();
+        _requireDistributor(auction, issuer);
         _createInvites(auction, issuer, codes);
     }
 
@@ -166,7 +168,6 @@ contract InviteRegistry {
     }
 
     function _requireDistributor(address auction, address issuer) internal {
-        if (issuer == creatorOf[auction]) return;
         if (!_holdsNft(issuer)) revert NotDistributor();
         referrerNft.bind(auction, issuer);
     }

@@ -8,7 +8,7 @@ Launches use Uniswap’s [CCA](https://developers.uniswap.org/docs/liquidity/liq
 
 Flow in this stack:
 
-1. **Launch** — `CcaLaunchFactory` mints a fixed-supply Uniswap `UERC20` (with required X verification in `extraData`) and opens a CCA via [LiquidityLauncher → LBPStrategy](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies). The creator then mints invite codes on `InviteRegistry`.
+1. **Launch** — `CcaLaunchFactory` mints a fixed-supply Uniswap `UERC20` (with required X verification in `extraData`) and opens a CCA via [LiquidityLauncher → LBPStrategy](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies). Creating a token does not mint a distributor NFT or invite codes.
 2. **Bid** — Participants `submitBid` with invite `hookData`, checked by `InviteValidationHook` / `InviteRegistry`. NFT holders and the creator may bid without a code. Non-creator inviters accrue per-auction volume on their Recruit NFT (Scout+ earns fees).
 3. **Migrate** — After the auction ends, anyone can call LBP [`migrate`](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/liquidity-strategies) to seed an ETH/token v4 pool at the discovered price, with `LaunchFeeHook` attached.
 4. **Trade & claim** — Swaps accrue hook fees; `harvest` pushes balances to `FeeDistributor` for creator / referrer / platform claims. Auction winners claim tokens after the configured claim block.

@@ -71,7 +71,6 @@ contract CcaLaunchFactory {
         uint128 minRaise;
         uint16 auctionSupplyBps;
         bytes32 salt;
-        bytes32 inviteCode;
     }
 
     struct Launch {
@@ -106,7 +105,6 @@ contract CcaLaunchFactory {
     error InvalidDuration();
     error InvalidSupplyBps();
     error NeedXVerification();
-    error NeedInvite();
 
     constructor(
         ILiquidityLauncher launcher_,
@@ -137,7 +135,6 @@ contract CcaLaunchFactory {
         }
         if (params.auctionBlocks < 2) revert InvalidDuration();
         if (params.metadata.extraData.length == 0) revert NeedXVerification();
-        if (params.inviteCode == bytes32(0)) revert NeedInvite();
 
         uint16 auctionSupplyBps = params.auctionSupplyBps == 0 ? DEFAULT_AUCTION_SUPPLY_BPS : params.auctionSupplyBps;
         if (auctionSupplyBps == 0 || auctionSupplyBps >= 10_000) revert InvalidSupplyBps();
@@ -227,9 +224,6 @@ contract CcaLaunchFactory {
         );
 
         invites.registerAuction(auction, token, msg.sender);
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = params.inviteCode;
-        invites.seedInvites(auction, msg.sender, codes);
 
         Distribution memory dist =
             Distribution({strategy: address(lbpStrategy), amount: uint128(supply), configData: configData});

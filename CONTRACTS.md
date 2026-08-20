@@ -16,7 +16,7 @@ Permissionless **CCA + LBPStrategy** launches via Uniswap LiquidityLauncher → 
 
 1. Creator calls `CcaLaunchFactory.createLaunch` (requires non-empty `extraData` with X verification)
 2. Factory mints `UERC20` via `LiquidityLauncher.createToken(UERC20Factory, …)` and `distributeToken` → `LBPStrategy` → CCA
-3. Platform operator mints more invites (`createInvitesFor`) or authorizes a wallet via EIP-712 (`createInvites`) after X is linked
+3. Distributor NFT holders mint invites (`createInvites` with EIP-712 auth, or operator `createInvitesFor`)
 4. Bidders `submitBid(..., hookData)` with invite (validation hook)
 5. After end: permissionless `LBPStrategy.migrate` seeds pool (fee=0.1%, hook=`LaunchFeeHook`)
 6. Swaps → hook fees → `harvest` → `FeeDistributor` (20% / 75% / 5%)

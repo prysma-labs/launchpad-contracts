@@ -26,14 +26,14 @@ contract SeedFixturesScript is Script {
     uint256 constant TESTER_1 =
         0x98eab43565a8e2d51079f1818ef9ce4c0c2f91d4f772768ad81c2fa6a15951ba;
     address constant TESTER_1_ADDR = 0x530bf56676Af5bdf5B0104Db8CD3d4588AA80735;
+    uint256 constant MAX_CREATOR_KEY =
+        0x35e5274ca0b1bcc3bcb55a908580f52d7e0e258258e279f49c940d36f5ac639d;
+    address constant MAX_CREATOR = 0x0BbF921421383edE2837d31c535Fb8452D788aE9;
     address constant MAX_DIST_TESTER = 0x4489C7836eBE6aBf8a95Ad87877E8123e5F20A25;
 
     /// Base Sepolia Punks `0xE8E9…9df2`
     bytes constant PUNKS_EXTRA =
         '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6InVuZWViYWdoIiwieF91c2VyX2lkIjoiNjk4MzIxNTQiLCJ3YWxsZXRfYWRkcmVzcyI6IjB4QmI2ZjM5N2Q5ZDhiZjEyOGREYTYwNzAwNTM5N0Y1MzlCNDNDRDcxMCIsImlhdCI6MTc4NjY4NjcyM30.r_1dGwgnM-YWHrbYgeh2p_Uu0Pi7PZz_Oun1iYgdHzI"}';
-    /// Base Sepolia Prysma `0x800c…d5CC`
-    bytes constant PRYSMA_EXTRA =
-        '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6InByeXNtYUhRIiwieF91c2VyX2lkIjoiMTk2MjIwNjM3MDA3MTIyMDIyNCIsIndhbGxldF9hZGRyZXNzIjoiMHhCYjZmMzk3ZDlkOGJmMTI4ZERhNjA3MDA1Mzk3RjUzOUI0M0NENzEwIiwiaWF0IjoxNzg2Njg4NDI2fQ.Ti5hbytmznVwAtuyz9zVRDqfD4xNI6Q7D1hHsSiVS1A"}';
     /// Base Sepolia Virtuoso Club `0x5f3D…59dA`
     bytes constant VIRTUOSO_EXTRA =
         '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6InZpcnR1b3NvX2NsdWIiLCJ4X3VzZXJfaWQiOiIxNjY0NDU2MjI1MTc2NjcwMjEwIiwid2FsbGV0X2FkZHJlc3MiOiIweEJiNmYzOTdkOWQ4YmYxMjhkRGE2MDcwMDUzOTdGNTM5QjQzQ0Q3MTAiLCJpYXQiOjE3ODY2ODg1NDF9.qDjPf4Ct2HvCZCCMI4KbDgcEA40-eKDVB1MW2x19NDA"}';
@@ -43,15 +43,14 @@ contract SeedFixturesScript is Script {
     /// Base Sepolia Megapot `0x27Cb…BB15`
     bytes constant MEGAPOT_EXTRA =
         '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6InVuZWViYWdoIiwieF91c2VyX2lkIjoiNjk4MzIxNTQiLCJ3YWxsZXRfYWRkcmVzcyI6IjB4QmI2ZjM5N2Q5ZDhiZjEyOGREYTYwNzAwNTM5N0Y1MzlCNDNDRDcxMCIsImlhdCI6MTc4Njc0NzM1OH0.UDAi-cmhR-hHeBNYllYf1sYs9wSHTb4Scr6iXktvz1s","xAvatarUrl":"https://pbs.twimg.com/profile_images/2081802220605980672/2ERTQR1q_bigger.jpg"}';
-    /// Base Sepolia Max Market `0x62bf…aaca` — creator is tester `0x530b…0735`
+    /// Base Sepolia Max Market `0x62bf…aaca` — creator is `0x0BbF…8aE9`
     bytes constant MAX_EXTRA =
-        '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6Il9tYXh0YWxrcyIsInhfdXNlcl9pZCI6IjE4NzU2MDIyNjMxMTQzODc0NTYiLCJ3YWxsZXRfYWRkcmVzcyI6IjB4NTMwYmY1NjY3NkFmNWJkZjVCMDEwNERiOENEM2Q0NTg4QUE4MDczNSIsImlhdCI6MX0.EVYN2QOJ8wXe5EN7n2DddHcKpS2S0VGIxB8xgjpYIMA","xAvatarUrl":"https://pbs.twimg.com/profile_images/1899943050362970114/bOFt7r-I_bigger.jpg"}';
+        '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6Il9tYXh0YWxrcyIsInhfdXNlcl9pZCI6IjE4NzU2MDIyNjMxMTQzODc0NTYiLCJ3YWxsZXRfYWRkcmVzcyI6IjB4MGJiZjkyMTQyMTM4M2VkZTI4MzdkMzFjNTM1ZmI4NDUyZDc4OGFlOSIsImlhdCI6MX0.placeholder","xAvatarUrl":"https://pbs.twimg.com/profile_images/1899943050362970114/bOFt7r-I_bigger.jpg"}';
 
     uint256 constant ID_MAX = 1;
     uint256 constant ID_PUNKS = 2;
     uint256 constant ID_VIRTUOSO = 3;
     uint256 constant ID_MEGAPOT = 4;
-    uint256 constant ID_PRYSMA = 5;
 
     /// @dev Punks / Virtuoso / Megapot are stamped 1 day ago by anvil-up.sh.
     function createEnded() public {
@@ -61,6 +60,9 @@ contract SeedFixturesScript is Script {
         factory.createLaunch(_virtuosoGrad());
         factory.createLaunch(_megapotFailed());
         vm.stopBroadcast();
+        _seedInvite(factory.getLaunch(ID_PUNKS).auction, keccak256("failed-invite"));
+        _seedInvite(factory.getLaunch(ID_VIRTUOSO).auction, keccak256("grad-invite"));
+        _seedInvite(factory.getLaunch(ID_MEGAPOT).auction, keccak256("megapot-invite"));
     }
 
     /// @dev 25 owners, 242.5124 ETH total, over the 100 ETH target.
@@ -174,23 +176,13 @@ contract SeedFixturesScript is Script {
         console2.log("maxMarketTrader", address(trader));
     }
 
-    function createLive() public {
-        (CcaLaunchFactory factory,, uint256 creatorKey,,) = _load();
-        vm.startBroadcast(creatorKey);
-        factory.createLaunch(_prysmaLive());
-        vm.stopBroadcast();
-    }
-
-    function bidLive() public {
-        _bid(ID_PRYSMA, keccak256("prysma"), 0.05 ether);
-    }
-
     /// @dev Stamped 30 days ago by anvil-up.sh. Invite mint is a separate
     ///      broadcast — forge view-calls in the same script still see the
     ///      simulated auction address, not the mined one.
     function createMaxMarket() public {
+        require(vm.addr(MAX_CREATOR_KEY) == MAX_CREATOR, "bad max creator key");
         (CcaLaunchFactory factory,,,,) = _load();
-        vm.startBroadcast(TESTER_1);
+        vm.startBroadcast(MAX_CREATOR_KEY);
         factory.createLaunch(_maxMarketGrad());
         vm.stopBroadcast();
     }
@@ -198,14 +190,13 @@ contract SeedFixturesScript is Script {
     function mintRecruits() public {
         (,, uint256 ownerKey,,) = _load();
         ReferrerNFT nft = _nft();
-        address[7] memory holders = [
+        address[6] memory holders = [
             0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
-            0xBb6f397d9d8bf128dDa607005397F539B43CD710,
-            MAX_DIST_TESTER,
             _maxDistIssuer(0),
             _maxDistIssuer(1),
             _maxDistIssuer(2),
-            _maxDistIssuer(3)
+            _maxDistIssuer(3),
+            _maxDistIssuer(4)
         ];
         vm.startBroadcast(ownerKey);
         for (uint256 i = 0; i < holders.length; i++) {
@@ -213,7 +204,6 @@ contract SeedFixturesScript is Script {
                 nft.mintTo(holders[i]);
             }
         }
-        nft.mintTo(_maxDistIssuer(4));
         vm.stopBroadcast();
     }
 
@@ -252,24 +242,13 @@ contract SeedFixturesScript is Script {
         vm.startBroadcast(creatorKey);
         factory.createLaunch(_lootEnding());
         vm.stopBroadcast();
+        _seedInvite(factory.getLaunch(factory.launchCount()).auction, keccak256("ending-invite"));
         console2.log("fixtures");
         console2.log("  1 Graduated     Max Market/MAX       54.123 ETH / 12 bids / 5 dists / 30d Token B flow");
         console2.log("  2 Failed Raise  Punks/PUNKS          68.13742 ETH / 57 bids  invite=failed-invite");
         console2.log("  3 Graduated     Virtuoso Club        242.5124 ETH / 25 bids  invite=grad-invite");
         console2.log("  4 Failed Raise  Megapot/MEGAPOT      28.124135 ETH / 13 bids invite=megapot-invite");
-        console2.log("  5 Live Auction  Prysma/PRYSMA        invite=prysma");
-        console2.log("  6 Ending Soon   Loot Genie/LOOT      invite=ending-invite");
-    }
-
-    function _bid(uint256 id, bytes32 invite, uint128 amount) internal {
-        (CcaLaunchFactory factory,,, uint256 bidderKey, address bidder) = _load();
-        address auction = factory.getLaunch(id).auction;
-        require(auction != address(0), "no auction");
-        vm.startBroadcast(bidderKey);
-        IContinuousClearingAuction(auction).submitBid{value: amount}(
-            _maxPrice(), amount, bidder, abi.encode(invite)
-        );
-        vm.stopBroadcast();
+        console2.log("  5 Ending Soon   Loot Genie/LOOT      invite=ending-invite");
     }
 
     function _load()
@@ -293,6 +272,15 @@ contract SeedFixturesScript is Script {
 
     function _registry() internal view returns (InviteRegistry) {
         return InviteRegistry(vm.readFile("./deployments/anvil-cca.json").readAddress(".cca.inviteRegistry"));
+    }
+
+    function _seedInvite(address auction, bytes32 code) internal {
+        (,, uint256 operatorKey,,) = _load();
+        bytes32[] memory codes = new bytes32[](1);
+        codes[0] = code;
+        vm.startBroadcast(operatorKey);
+        _registry().createInvitesFor(auction, MAX_DIST_TESTER, codes);
+        vm.stopBroadcast();
     }
 
     function _nft() internal view returns (ReferrerNFT) {
@@ -321,7 +309,6 @@ contract SeedFixturesScript is Script {
             _extra("punks", PUNKS_EXTRA),
             250,
             100 ether,
-            keccak256("failed-invite"),
             1
         );
     }
@@ -336,7 +323,6 @@ contract SeedFixturesScript is Script {
             _extra("megapot", MEGAPOT_EXTRA),
             250,
             50 ether,
-            keccak256("megapot-invite"),
             5
         );
     }
@@ -351,23 +337,7 @@ contract SeedFixturesScript is Script {
             _extra("virtuoso", VIRTUOSO_EXTRA),
             250,
             100 ether,
-            keccak256("grad-invite"),
             2
-        );
-    }
-
-    function _prysmaLive() internal view returns (CcaLaunchFactory.CreateParams memory) {
-        return _launch(
-            "Prysma",
-            "PRYSMA",
-            "New kind of launchpad",
-            "ipfs://bafkreid7qybjikrzndvhonc2rmkkp2gpvm3el5ktmkwp423jb33hasjjb4",
-            "https://prysma.trade/",
-            _extra("prysma", PRYSMA_EXTRA),
-            10_000,
-            100 ether,
-            keccak256("prysma"),
-            3
         );
     }
 
@@ -381,7 +351,6 @@ contract SeedFixturesScript is Script {
             _extra("loot", LOOT_EXTRA),
             100,
             1 ether,
-            keccak256("ending-invite"),
             4
         );
     }
@@ -396,7 +365,6 @@ contract SeedFixturesScript is Script {
             _extra("maxmarket", MAX_EXTRA),
             250,
             50 ether,
-            keccak256("max-invite"),
             6
         );
     }
@@ -450,7 +418,6 @@ contract SeedFixturesScript is Script {
         bytes memory extraData,
         uint64 auctionBlocks,
         uint128 minRaise,
-        bytes32 inviteCode,
         uint256 saltN
     ) internal pure returns (CcaLaunchFactory.CreateParams memory params) {
         params = CcaLaunchFactory.CreateParams({
@@ -465,8 +432,7 @@ contract SeedFixturesScript is Script {
             auctionBlocks: auctionBlocks,
             minRaise: minRaise,
             auctionSupplyBps: 5_000,
-            salt: bytes32(saltN),
-            inviteCode: inviteCode
+            salt: bytes32(saltN)
         });
     }
 
