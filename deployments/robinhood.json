@@ -27,7 +27,7 @@
   "uniswapLiquidityLauncher": {
     "liquidityLauncher": "0x00004c4ccc709Ef590F7C81102C0689F0263D4e9",
     "lbpStrategy": "0x05d552391067389EE44fec3924157ed33F976000",
-    "note": "Reference only — Prysma uses custom migrate, not stock LBPStrategy"
+    "note": "Reference only — Prysma Launchpad uses custom migrate, not stock LBPStrategy"
   },
   "notes": "Deploy after Base Sepolia validation. CCA factory is live on RHC. Confirm hookmate V4 router on 4663 or use Universal Router from frontend."
 }

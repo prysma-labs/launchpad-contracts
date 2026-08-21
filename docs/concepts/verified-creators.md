@@ -1,6 +1,6 @@
 # Verified creators
 
-Launches on Prysma are tied to a **verified creator** — a public social identity linked to the deploying wallet — so every listing has a real person (or brand) behind it that participants can judge before they bid.
+Launches on Prysma Launchpad are tied to a **verified creator** — a public social identity linked to the deploying wallet — so every listing has a real person (or brand) behind it that participants can judge before they bid.
 
 ## Why verify creators
 

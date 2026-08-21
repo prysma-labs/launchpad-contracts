@@ -1,48 +1,67 @@
-# How does distribution work
+# How Does Distribution Work?
 
-Distributors grow an auction by sharing invite codes. Referred **bid volume** sets your tier. After the token lists, you claim a share of hook fees.
+Prysma rewards people who help bring demand into token launches. We call these participants **Distributors**.
 
-A **10,000** collection is minted separately as **Recruit**. Holding one makes you a distributor on every auction — you do not need an invite to join, and you can create codes. Recruit has **weight 0** and does not earn. Referred volume of **0.5 ETH** upgrades the same NFT to **Scout** and fee share starts. Higher volume upgrades the badge and the fee weight.
+Distributors start by minting a **Recruit NFT**. When an auction goes live, they can generate an invite link and share it with people who may be interested in participating.
 
-Wallets without the NFT cannot generate invite codes. If a creator also holds an NFT and issues invites, those codes gate access but never earn this NFT’s fee share (the creator already has the 20% creator claim). See [invite codes](invite-codes.md).
+When someone follows their link and places a bid, that bid volume is attributed to the Distributor.
 
-## How you get paid
+**More bid volume unlocks higher tiers, and higher tiers earn greater rewards.**
 
-After migrate, swaps pay a **0.4%** hook fee in ETH. That fee is split **20% creator / 75% distributors / 5% platform**. Full rates and a $10M example live on [Fees](fees.md).
+## Getting Started
 
-The **75%** pool is split by **tier weight**, not raw volume:
+Prysma begins with an initial free mint of **1,000 Recruit NFTs**, with a maximum of **2 NFTs per wallet**.
 
-`your weight / Σ (people in each tier × that tier’s weight)`
+This represents the first cohort of Prysma Distributors. As the network grows, additional Recruit mints may be opened to bring new Distributors into the network.
 
-Same tier, same check. Extra ETH inside a tier does not raise the reward. A Partner is **35×** a Scout.
+A Recruit NFT gives its holder access to Prysma's distribution system, but **Recruits don't earn rewards by default**. They earn their way into the reward system by bringing bid volume into token launches.
 
-The **holder** of the NFT claims. Transfer the NFT, transfer unclaimed and future claims.
+Once auctions are live, the process is simple:
 
-## Tiers
+**Generate an invite → Share an auction → Bring bidders → Upgrade your NFT → Earn rewards**
 
-| Tier | Min ETH referred | Weight |
-|---|---|---|
-| Recruit | minted | 0 (no fees) |
-| Scout | 0.5 | 1 |
-| Promoter | 1 | 2 |
-| Advocate | 5 | 10 |
-| Ambassador | 10 | 20 |
-| Partner | 25 | 35 |
+The more bid volume a Distributor brings, the further their Recruit can progress through the Distributor tiers.
 
-Example: one Partner and one Scout share the pool **35 : 1**. If the distributor pool is $30,000, the Partner claims about $29,167 and the Scout about $833.
+## Distributor Tiers
 
-## Lifecycle
+A Distributor's tier is determined by the amount of bid volume they bring into an auction.
 
-1. Mint a Recruit NFT from the 10,000 collection (or receive one).
-2. Open any auction — you are already a distributor. Share your code. Bids that use it credit **you** (not the creator).
-3. Volume below 0.5 ETH stays Recruit (weight 0). At 0.5 ETH the same NFT upgrades to Scout.
-4. Crossing the next floor upgrades art and weight.
-5. After migrate and harvest, claim as the current NFT holder.
+| Tier           | Bid Volume | Weight |
+| -------------- | ---------: | -----: |
+| **Recruit**    |  < 0.5 ETH |     0× |
+| **Scout**      |    0.5 ETH |     1× |
+| **Promoter**   |      1 ETH |     2× |
+| **Advocate**   |      5 ETH |    10× |
+| **Ambassador** |     10 ETH |    20× |
+| **Partner**    |     25 ETH |    35× |
 
-## Onchain
+When a Distributor crosses a threshold, **the same NFT upgrades to the new tier**, including its badge and artwork.
 
-| Contract | Role |
-|---|---|
-| [`ReferrerNFT`](../api/ReferrerNFT.md) | 10k Recruit mint; upgrade tier/art/weight with per-auction volume |
-| [`InviteRegistry`](../api/InviteRegistry.md) | Codes and attribution; only NFT holders mint codes |
-| [`FeeDistributor`](../api/FeeDistributor.md) | Holder claims `weight / totalWeight` of the 75% pool |
+For example, if you bring **0.7 ETH** of bid volume into an auction, your Recruit becomes a **Scout**. If your referred bid volume later reaches **5 ETH**, it upgrades to an **Advocate**.
+
+Higher tiers receive greater weight when rewards from that market are distributed.
+
+Rewards are based on your **tier**, rather than continuously scaling with every additional ETH. A Distributor who brings 6 ETH and one who brings 9 ETH are both Advocates and therefore receive the same 10× weight.
+
+## Rewards
+
+When an auction successfully graduates, the token begins trading on its Uniswap market.
+
+Trading generates fees, and a portion of Prysma's fees is allocated to the Distributors who helped bring demand into that auction.
+
+Each Distributor's share is determined by their **tier weight relative to the combined weight of all qualifying Distributors**.
+
+For example, imagine an auction has two Distributors:
+
+* Alice is a **Partner** with a weight of **35×**
+* Bob is a **Scout** with a weight of **1×**
+
+Together, they have **36 points of weight**.
+
+If the market generates **$36,000 in Distributor rewards**, Alice receives **$35,000** and Bob receives **$1,000**.
+
+Because these rewards come from trading fees rather than an upfront referral payment, Distributors remain economically connected to the markets they helped create.
+
+The idea is simple:
+
+**Bring demand → help build the market → participate in the value it generates.**
