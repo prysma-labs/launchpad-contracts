@@ -1,12 +1,20 @@
+---
+description: "Invite-gated CCA launches on Uniswap v4, then a locked pool with hook fee distribution."
+icon: diagram-project
+---
+
 # Protocol Design
 
 Invite-gated token launches on Uniswap v4. Creators open a [Continuous Clearing Auction (CCA)](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/cca); after graduation, proceeds seed a locked v4 pool. This repo adds invite validation and [hook](https://developers.uniswap.org/docs/protocols/v4/concepts/hooks)-based fee distribution on top of Uniswap’s [Liquidity Launchpad](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/overview).
 
-Published docs live in [`docs/`](./docs/) and sync to GitBook.
-
 ## Mechanics
 
 Launches use Uniswap’s [CCA](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/cca): bidders set a budget and max price; each block, a release schedule allocates tokens to active bids at a uniform clearing price. Early participation is rewarded and last-minute sniping is ineffective — see the [CCA overview](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/overview) and [whitepaper](https://developers.uniswap.org/whitepaper_cca.pdf).
+
+```mermaid
+flowchart LR
+    Launch --> Bid --> Migrate --> Trade
+```
 
 Flow in this stack:
 
@@ -19,21 +27,21 @@ Flow in this stack:
 
 | Concept | What it covers |
 |---|---|
-| [Fees](docs/concepts/fees.md) | Auction/LP split, hook fee, 20/75/5 claims |
-| [How does distribution work](docs/concepts/distribution.md) | Distributor NFTs, tiers, and how the 75% pool is split |
-| [Verified creators](docs/concepts/verified-creators.md) | Why launches require a public creator identity, and how the proof is stored in UERC20 `extraData` |
-| [Invite codes](docs/concepts/invite-codes.md) | Invite-gated bidding, referral weight, and how codes map to `hookData` |
+| [Fees](fees.md) | Auction/LP split, hook fee, 20/75/5 claims |
+| [How does distribution work](distribution.md) | Distributor NFTs, tiers, and how the 75% pool is split |
+| [Verified creators](verified-creators.md) | Why launches require a public creator identity, and how the proof is stored in UERC20 `extraData` |
+| [Invite codes](invite-codes.md) | Invite-gated bidding, referral weight, and how codes map to `hookData` |
 
 ## API Reference
 
 | Contract | Role |
 |---|---|
-| [`CcaLaunchFactory`](src/strategy/CcaLaunchFactory.sol) | Create UERC20 + CCA/LBP launch (requires `extraData` X verification) |
-| [`InviteRegistry`](src/invite/InviteRegistry.sol) | Invite codes + participation |
-| [`InviteValidationHook`](src/invite/InviteValidationHook.sol) | CCA bid gate (`hookData`) |
-| [`ReferrerNFT`](src/nft/ReferrerNFT.sol) | Transferable distributor claim NFT |
-| [`LaunchFeeHook`](src/fee/LaunchFeeHook.sol) | Post-migrate swap hook fee |
-| [`FeeDistributor`](src/fee/FeeDistributor.sol) | Claimable 20/75/5 fee split |
-| [`IReferralSource`](src/fee/IReferralSource.sol) | NFT tier-weight interface |
+| [`CcaLaunchFactory`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/strategy/CcaLaunchFactory.sol) | Create UERC20 + CCA/LBP launch (requires `extraData` X verification) |
+| [`InviteRegistry`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/invite/InviteRegistry.sol) | Invite codes + participation |
+| [`InviteValidationHook`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/invite/InviteValidationHook.sol) | CCA bid gate (`hookData`) |
+| [`ReferrerNFT`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/nft/ReferrerNFT.sol) | Transferable distributor claim NFT |
+| [`LaunchFeeHook`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/fee/LaunchFeeHook.sol) | Post-migrate swap hook fee |
+| [`FeeDistributor`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/fee/FeeDistributor.sol) | Claimable 20/75/5 fee split |
+| [`IReferralSource`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/fee/IReferralSource.sol) | NFT tier-weight interface |
 
 Upstream Uniswap pieces used at runtime (not in this repo’s `src/`): LiquidityLauncher, LBPStrategy, Continuous Clearing Auction, CompoundingClaimRecipient, UERC20Factory / UERC20.

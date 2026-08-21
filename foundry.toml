@@ -14,13 +14,6 @@ via_ir = true
 optimizer = true
 optimizer_runs = 200
 
-# NatSpec docs only need `src/` — skip compiling the test tree.
-[profile.docs]
-src = "src"
-test = "src"
-script = "src"
-out = "out-docs"
-
 [lint]
 exclude_lints = ["screaming-snake-case-immutable", "screaming-snake-case-const"]
 lint_on_build = false

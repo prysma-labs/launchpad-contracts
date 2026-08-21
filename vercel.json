@@ -1,6 +1,0 @@
-{
-  "framework": null,
-  "installCommand": "echo 'Foundry + libs installed in build-docs.sh'",
-  "buildCommand": "bash ./scripts/build-docs.sh",
-  "outputDirectory": "docs/natspec/book"
-}

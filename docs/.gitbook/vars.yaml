@@ -1,0 +1,5 @@
+github_repo: https://github.com/prysma-labs/launchpad-contracts
+hook_fee: 0.4%
+lp_fee: 0.1%
+auction_lp_split: 50/50
+fee_split: 20/75/5

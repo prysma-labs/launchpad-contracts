@@ -1,6 +1,6 @@
 # Contracts
 
-Scope: Foundry in this repo (`prysma-labs/launchpad-contracts`). The launchpad web app reads chain via wagmi/viem. Public NatSpec overview: [README.md](./README.md). Product overview: [prysma-labs/launchpad](https://github.com/prysma-labs/launchpad).
+Scope: Foundry in this repo (`prysma-labs/launchpad-contracts`). The launchpad web app reads chain via wagmi/viem. Public docs: GitBook, sourced from [`docs/`](./docs/). Product app: [prysma-labs/launchpad](https://github.com/prysma-labs/launchpad).
 
 ## Goal
 
@@ -38,20 +38,8 @@ forge test --match-contract CcaLaunchTest
 ./scripts/deploy-cca.sh
 ```
 
-## NatSpec docs (Vercel)
+## Docs (GitBook)
 
-Docs are generated from Solidity NatSpec (`@notice`, `@dev`, …) on each deploy — edit comments in `src/`, push, and the docs site rebuilds.
+Published docs sync from [`docs/`](./docs/) via Git Sync (`prysma-labs/launchpad-contracts`, project directory `docs`, GitHub → GitBook).
 
-Styling lives in [`docs-theme/`](./docs-theme/) and is applied after `forge doc` (generated `docs/natspec/` is gitignored).
-
-```bash
-# Local
-./scripts/build-docs.sh
-# open docs/natspec/book/index.html
-```
-
-Vercel project (separate from launchpad `web`):
-
-- **Root Directory:** `.` (this repo)
-- Uses [`vercel.json`](./vercel.json) → `scripts/build-docs.sh` → output `docs/natspec/book`
-- `lib/` is gitignored, so the build script clones Foundry deps at build time (ignore the “Failed to fetch git submodules” warning)
+Edit markdown in `docs/` and push to `main`.
