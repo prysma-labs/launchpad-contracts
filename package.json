@@ -1,9 +1,10 @@
 {
   "name": "prysma-docs",
   "private": true,
+  "packageManager": "pnpm@10.11.0",
   "scripts": {
-    "docs": "honkit serve",
-    "docs:build": "honkit build"
+    "docs": "bash ./scripts/build-docs.sh serve",
+    "docs:build": "bash ./scripts/build-docs.sh"
   },
   "devDependencies": {
     "honkit": "^6.2.2"

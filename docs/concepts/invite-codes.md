@@ -21,10 +21,10 @@ Auctions are **invite-gated**: every CCA bid must include a valid invite code, u
 
 | Contract | Role |
 |---|---|
-| [`InviteRegistry`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/invite/InviteRegistry.sol) | Stores codes → issuer and participation; credits `ReferrerNFT` |
-| [`InviteValidationHook`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/invite/InviteValidationHook.sol) | CCA validation hook; requires `hookData` = invite `bytes32` |
-| [`ReferrerNFT`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/nft/ReferrerNFT.sol) | 10k transferable claim NFT; mint as Recruit, upgrade art/weight by volume |
-| [`FeeDistributor`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/fee/FeeDistributor.sol) | Pays NFT holders using `IReferralSource` tier weights |
+| [`InviteRegistry`](../api/InviteRegistry.md) | Stores codes → issuer and participation; credits `ReferrerNFT` |
+| [`InviteValidationHook`](../api/InviteValidationHook.md) | CCA validation hook; requires `hookData` = invite `bytes32` |
+| [`ReferrerNFT`](../api/ReferrerNFT.md) | 10k transferable claim NFT; mint as Recruit, upgrade art/weight by volume |
+| [`FeeDistributor`](../api/FeeDistributor.md) | Pays NFT holders using `IReferralSource` tier weights |
 
 Validation (simplified):
 

@@ -43,6 +43,6 @@ Example: one Partner and one Scout share the pool **35 : 1**. If the distributor
 
 | Contract | Role |
 |---|---|
-| [`ReferrerNFT`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/nft/ReferrerNFT.sol) | 10k Recruit mint; upgrade tier/art/weight with per-auction volume |
-| [`InviteRegistry`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/invite/InviteRegistry.sol) | Codes and attribution; only NFT holders mint codes |
-| [`FeeDistributor`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/fee/FeeDistributor.sol) | Holder claims `weight / totalWeight` of the 75% pool |
+| [`ReferrerNFT`](../api/ReferrerNFT.md) | 10k Recruit mint; upgrade tier/art/weight with per-auction volume |
+| [`InviteRegistry`](../api/InviteRegistry.md) | Codes and attribution; only NFT holders mint codes |
+| [`FeeDistributor`](../api/FeeDistributor.md) | Holder claims `weight / totalWeight` of the 75% pool |

@@ -10,3 +10,4 @@ Prysma is a token launch protocol on Uniswap v4. Continuous Clearing Auctions di
 | [Verified creators](concepts/verified-creators.md) | Why launches require a public identity, and how proof is stored |
 | [Invite codes](concepts/invite-codes.md) | Invite-gated bidding, referral weight, and hookData |
 | [Protocol Design](concepts/protocol-design.md) | Launch → bid → migrate → trade, and the contracts involved |
+| [API Reference](api/README.md) | NatSpec for the contracts in this repo |

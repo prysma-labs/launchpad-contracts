@@ -1,0 +1,236 @@
+:root {
+  --ink: #0e1520;
+  --ink-soft: #3d4a5c;
+  --ink-muted: #6b7a90;
+  --royal: #2f4fd6;
+  --royal-soft: rgba(47, 79, 214, 0.1);
+  --line: rgba(14, 21, 32, 0.1);
+  --canvas: #ffffff;
+  --sidebar: #ffffff;
+  --code-bg: #f6f8fa;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 16px;
+  letter-spacing: 0;
+  color: var(--ink);
+  background: var(--canvas);
+}
+
+.book-summary,
+.book-header,
+.book-body,
+.markdown-section {
+  font-family: var(--font);
+}
+
+.book-summary {
+  background: var(--sidebar);
+  color: var(--ink-soft);
+  border-right: 1px solid var(--line);
+}
+
+.book-summary ul.summary {
+  padding: 8px 0 32px;
+}
+
+.book-summary ul.summary li.header {
+  padding: 20px 20px 8px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.book-summary ul.summary li.header::before {
+  content: "";
+  display: block;
+  width: 78%;
+  height: 0.5px;
+  margin: 0 auto 16px;
+  background: var(--line);
+}
+
+.book-summary ul.summary li a,
+.book-summary ul.summary li span {
+  padding: 6px 20px;
+  color: var(--ink-muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.book-summary ul.summary li a:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.book-summary ul.summary li.active > a {
+  color: var(--royal);
+  font-weight: 500;
+}
+
+.book-summary ul.summary > li:has(.gitbook-link),
+.book-summary ul.summary > li.divider:has(+ li .gitbook-link) {
+  display: none;
+}
+
+.book-summary ul.summary li a.gitbook-link {
+  display: none !important;
+}
+
+#book-search-input {
+  background: var(--sidebar);
+  border-top: none;
+  border-bottom: 1px solid var(--line);
+  margin: 0 0 8px;
+  padding: 16px 16px 12px;
+}
+
+#book-search-input input {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+#book-search-input input::placeholder {
+  color: var(--ink-muted);
+  opacity: 1;
+}
+
+#book-search-input input::-webkit-input-placeholder {
+  color: var(--ink-muted);
+  opacity: 1;
+}
+
+.book-body {
+  color: var(--ink);
+  background: var(--canvas);
+}
+
+.book-header {
+  color: var(--ink-muted);
+}
+
+.book-header .btn {
+  color: var(--ink-muted);
+}
+
+.book-header .btn:hover {
+  color: var(--ink);
+}
+
+.page-inner {
+  max-width: 760px;
+  padding: 24px 24px 64px;
+}
+
+.markdown-section {
+  color: var(--ink);
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+.markdown-section h1,
+.markdown-section h2,
+.markdown-section h3,
+.markdown-section h4 {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.markdown-section h1 {
+  font-size: 2em;
+  margin-top: 0;
+}
+
+.markdown-section h2 {
+  font-size: 1.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--line);
+}
+
+.markdown-section h3 {
+  font-size: 1.25em;
+}
+
+.markdown-section a {
+  color: var(--royal);
+}
+
+.markdown-section a:hover {
+  color: #1e35b0;
+}
+
+.markdown-section code,
+.markdown-section pre {
+  font-family: var(--font-mono);
+}
+
+.markdown-section code {
+  background: var(--code-bg);
+  border-radius: 6px;
+  padding: 0.16em 0.4em;
+  font-size: 0.875em;
+}
+
+.markdown-section pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.markdown-section table {
+  font-size: 15px;
+}
+
+.markdown-section table th,
+.markdown-section table td {
+  border-color: var(--line);
+}
+
+.markdown-section table tr {
+  background: var(--canvas);
+  border-top-color: var(--line);
+}
+
+.markdown-section table tr:nth-child(2n) {
+  background: var(--code-bg);
+}
+
+.markdown-section table th {
+  background: var(--code-bg);
+}
+
+.markdown-section hr {
+  height: 1px;
+  background: var(--line);
+}
+
+.markdown-section blockquote {
+  color: var(--ink-soft);
+  border-left-color: var(--royal);
+  background: var(--royal-soft);
+  padding: 8px 16px;
+  border-radius: 0 6px 6px 0;
+}
+
+.navigation {
+  color: var(--ink-muted);
+  opacity: 0.35;
+}
+
+.navigation:hover {
+  color: var(--royal);
+  opacity: 1;
+}
+
+.book .book-header .font-settings {
+  display: none;
+}

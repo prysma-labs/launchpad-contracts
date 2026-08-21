@@ -26,12 +26,12 @@ Flow in this stack:
 
 | Contract | Role |
 |---|---|
-| [`CcaLaunchFactory`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/strategy/CcaLaunchFactory.sol) | Create UERC20 + CCA/LBP launch (requires `extraData` X verification) |
-| [`InviteRegistry`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/invite/InviteRegistry.sol) | Invite codes + participation |
-| [`InviteValidationHook`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/invite/InviteValidationHook.sol) | CCA bid gate (`hookData`) |
-| [`ReferrerNFT`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/nft/ReferrerNFT.sol) | Transferable distributor claim NFT |
-| [`LaunchFeeHook`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/fee/LaunchFeeHook.sol) | Post-migrate swap hook fee |
-| [`FeeDistributor`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/fee/FeeDistributor.sol) | Claimable 20/75/5 fee split |
-| [`IReferralSource`](https://github.com/prysma-labs/launchpad-contracts/blob/main/src/fee/IReferralSource.sol) | NFT tier-weight interface |
+| [`CcaLaunchFactory`](../api/CcaLaunchFactory.md) | Create UERC20 + CCA/LBP launch (requires `extraData` X verification) |
+| [`InviteRegistry`](../api/InviteRegistry.md) | Invite codes + participation |
+| [`InviteValidationHook`](../api/InviteValidationHook.md) | CCA bid gate (`hookData`) |
+| [`ReferrerNFT`](../api/ReferrerNFT.md) | Transferable distributor claim NFT |
+| [`LaunchFeeHook`](../api/LaunchFeeHook.md) | Post-migrate swap hook fee |
+| [`FeeDistributor`](../api/FeeDistributor.md) | Claimable 20/75/5 fee split |
+| [`IReferralSource`](../api/IReferralSource.md) | NFT tier-weight interface |
 
 Upstream Uniswap pieces used at runtime (not in this repo’s `src/`): LiquidityLauncher, LBPStrategy, Continuous Clearing Auction, CompoundingClaimRecipient, UERC20Factory / UERC20.

@@ -40,4 +40,4 @@ forge test --match-contract CcaLaunchTest
 
 ## Docs (HonKit)
 
-Markdown lives in [`docs/`](./docs/). Preview locally with `npm run docs`, or build with `npm run docs:build`. Vercel publishes `_book/` to `docs.prysma.trade`.
+Markdown lives in [`docs/`](./docs/). NatSpec API pages are generated from `src/` via `forge doc`. Preview with `pnpm docs`, or build with `pnpm docs:build`. Vercel publishes `_book/` to `docs.prysma.trade`.

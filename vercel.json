@@ -1,6 +1,6 @@
 {
   "framework": null,
-  "installCommand": "npm install",
-  "buildCommand": "npx honkit build",
+  "installCommand": "pnpm install",
+  "buildCommand": "bash ./scripts/build-docs.sh",
   "outputDirectory": "_book"
 }

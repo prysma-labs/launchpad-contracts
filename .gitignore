@@ -19,3 +19,7 @@ node_modules/
 
 # HonKit output
 _book/
+
+# Generated NatSpec
+out-docs/
+.natspec/
