@@ -1,8 +1,3 @@
----
-description: "Prysma makes market manipulation less rewarding by changing the incentives around how tokens are launched and distributed."
-icon: bullseye
----
-
 # Overview
 
 Prysma is a token launch protocol designed to make market manipulation less rewarding by changing the incentives around how tokens are launched and distributed.

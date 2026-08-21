@@ -2,7 +2,7 @@
 
 Invite-gated token launches on Uniswap v4. Creators open a [Continuous Clearing Auction (CCA)](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/cca); after graduation, proceeds seed a locked v4 pool. This repo adds invite validation and [hook](https://developers.uniswap.org/docs/protocols/v4/concepts/hooks)-based fee distribution on top of Uniswap’s [Liquidity Launchpad](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/overview).
 
-Published docs live in [`docs/`](./docs/) and sync to GitBook.
+Published docs live in [`docs/`](./docs/) and build with HonKit (`npm run docs`).
 
 ## Mechanics
 

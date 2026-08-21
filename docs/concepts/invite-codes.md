@@ -1,8 +1,3 @@
----
-description: "Invite-gated bidding, referral attribution, and how codes map to hookData."
-icon: ticket
----
-
 # Invite codes
 
 Auctions are **invite-gated**: every CCA bid must include a valid invite code, unless the bidder is the creator or already holds a distributor NFT. That keeps early participation intentional, and it is how referrers earn a share of post-migrate hook fees.
@@ -33,7 +28,7 @@ Auctions are **invite-gated**: every CCA bid must include a valid invite code, u
 
 Validation (simplified):
 
-```solidity
+```
 function validate(..., bytes calldata hookData) external {
     if (hookData.length != 32) revert InvalidHookData();
     bytes32 code = abi.decode(hookData, (bytes32));

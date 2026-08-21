@@ -1,8 +1,3 @@
----
-description: "Invite-gated CCA launches on Uniswap v4, then a locked pool with hook fee distribution."
-icon: diagram-project
----
-
 # Protocol Design
 
 Invite-gated token launches on Uniswap v4. Creators open a [Continuous Clearing Auction (CCA)](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/cca); after graduation, proceeds seed a locked v4 pool. This repo adds invite validation and [hook](https://developers.uniswap.org/docs/protocols/v4/concepts/hooks)-based fee distribution on top of Uniswap’s [Liquidity Launchpad](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/overview).
@@ -10,11 +5,6 @@ Invite-gated token launches on Uniswap v4. Creators open a [Continuous Clearing 
 ## Mechanics
 
 Launches use Uniswap’s [CCA](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/concepts/cca): bidders set a budget and max price; each block, a release schedule allocates tokens to active bids at a uniform clearing price. Early participation is rewarded and last-minute sniping is ineffective — see the [CCA overview](https://developers.uniswap.org/docs/liquidity/liquidity-launchpad/overview) and [whitepaper](https://developers.uniswap.org/whitepaper_cca.pdf).
-
-```mermaid
-flowchart LR
-    Launch --> Bid --> Migrate --> Trade
-```
 
 Flow in this stack:
 

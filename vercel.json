@@ -1,0 +1,6 @@
+{
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "npx honkit build",
+  "outputDirectory": "_book"
+}

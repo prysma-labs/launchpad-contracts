@@ -1,0 +1,11 @@
+{
+  "name": "prysma-docs",
+  "private": true,
+  "scripts": {
+    "docs": "honkit serve",
+    "docs:build": "honkit build"
+  },
+  "devDependencies": {
+    "honkit": "^6.2.2"
+  }
+}

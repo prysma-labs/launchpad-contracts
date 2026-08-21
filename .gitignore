@@ -16,3 +16,6 @@ out/
 # Node modules
 node_modules/
 .vercel
+
+# HonKit output
+_book/

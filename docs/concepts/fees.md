@@ -1,8 +1,3 @@
----
-description: "Auction and LP split, hook fee, and the 20/75/5 claim."
-icon: coins
----
-
 # Fees
 
 Defaults (overridable at launch where noted):
@@ -14,9 +9,7 @@ Defaults (overridable at launch where noted):
 | Hook fee | **0.4%** | Taken by `LaunchFeeHook` in **ETH** on both sides: buys via `beforeSwap` (specified ETH), sells via `afterSwap` (ETH out) |
 | Hook fee split | **20%** creator / **75%** distributors / **5%** platform | Fixed in `FeeDistributor`. How the 75% is split is in [How does distribution work](distribution.md). |
 
-{% hint style="info" %}
 The 20/75/5 hook-fee split is fixed in `FeeDistributor`. The auction/LP token split and fee rates can be overridden at launch.
-{% endhint %}
 
 ## Example — $10M trading volume
 

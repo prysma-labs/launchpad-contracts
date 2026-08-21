@@ -1,8 +1,3 @@
----
-description: "Distributor NFTs, tiers, and how the 75% hook-fee pool is split."
-icon: share-nodes
----
-
 # How does distribution work
 
 Distributors grow an auction by sharing invite codes. Referred **bid volume** sets your tier. After the token lists, you claim a share of hook fees.

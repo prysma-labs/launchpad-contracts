@@ -1,6 +1,6 @@
 # Contracts
 
-Scope: Foundry in this repo (`prysma-labs/launchpad-contracts`). The launchpad web app reads chain via wagmi/viem. Public docs: GitBook, sourced from [`docs/`](./docs/). Product app: [prysma-labs/launchpad](https://github.com/prysma-labs/launchpad).
+Scope: Foundry in this repo (`prysma-labs/launchpad-contracts`). The launchpad web app reads chain via wagmi/viem. Public docs: HonKit, sourced from [`docs/`](./docs/). Product app: [prysma-labs/launchpad](https://github.com/prysma-labs/launchpad).
 
 ## Goal
 
@@ -38,8 +38,6 @@ forge test --match-contract CcaLaunchTest
 ./scripts/deploy-cca.sh
 ```
 
-## Docs (GitBook)
+## Docs (HonKit)
 
-Published docs sync from [`docs/`](./docs/) via Git Sync (`prysma-labs/launchpad-contracts`, project directory `docs`, GitHub → GitBook).
-
-Edit markdown in `docs/` and push to `main`.
+Markdown lives in [`docs/`](./docs/). Preview locally with `npm run docs`, or build with `npm run docs:build`. Vercel publishes `_book/` to `docs.prysma.trade`.

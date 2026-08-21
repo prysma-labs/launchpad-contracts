@@ -1,8 +1,3 @@
----
-description: "Launches require a public creator identity, stored as proof in UERC20 extraData."
-icon: badge-check
----
-
 # Verified creators
 
 Launches on Prysma are tied to a **verified creator** — a public social identity linked to the deploying wallet — so every listing has a real person (or brand) behind it that participants can judge before they bid.
@@ -29,7 +24,7 @@ Today that identity is the creator’s **X (Twitter)** account. A **website** is
 
 Tokens are Uniswap `UERC20`s. Metadata includes an opaque `extraData` field used for the creator proof:
 
-```solidity
+```
 struct UERC20Metadata {
     string description;
     string website;   // optional
@@ -51,7 +46,7 @@ struct UERC20Metadata {
 
 Factory gate:
 
-```solidity
+```
 if (params.metadata.extraData.length == 0) revert NeedXVerification();
 ```
 
