@@ -1,10 +1,12 @@
 # InviteValidationHook
-[Git Source](https://github.com/prysma-labs/launchpad-contracts/blob/3528c3a546aa4da6c3de1ec8f4ab563f3a4a2c69/src/invite/InviteValidationHook.sol)
+[Git Source](https://github.com/prysma-labs/launchpad-contracts/blob/5581699504b49b43ecb36ba097021e1d689dd2d0/src/invite/InviteValidationHook.sol)
 
 **Inherits:**
 IValidationHook
 
 CCA bid validation: require a valid invite code in hookData.
+
+Not attached to new auctions. Kept for a later referral program.
 
 
 ## State Variables

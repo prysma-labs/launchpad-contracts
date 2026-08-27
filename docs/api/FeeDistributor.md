@@ -1,9 +1,9 @@
 # FeeDistributor
-[Git Source](https://github.com/prysma-labs/launchpad-contracts/blob/3528c3a546aa4da6c3de1ec8f4ab563f3a4a2c69/src/fee/FeeDistributor.sol)
+[Git Source](https://github.com/prysma-labs/launchpad-contracts/blob/5581699504b49b43ecb36ba097021e1d689dd2d0/src/fee/FeeDistributor.sol)
 
-Accrues hook fees and pays creator / referrers / platform via claim.
+Accrues hook fees and pays creator / platform via claim.
 
-Split: 20% creator, 75% referrers (NFT tier weights), 5% platform.
+Split: 95% creator, 5% platform.
 
 
 ## State Variables
@@ -17,14 +17,7 @@ address public constant PLATFORM = 0xBb6f397d9d8bf128dDa607005397F539B43CD710
 ### CREATOR_BPS
 
 ```
-uint16 public constant CREATOR_BPS = 2_000
-```
-
-
-### REFERRERS_BPS
-
-```
-uint16 public constant REFERRERS_BPS = 7_500
+uint16 public constant CREATOR_BPS = 9_500
 ```
 
 
@@ -39,13 +32,6 @@ uint16 public constant PLATFORM_BPS = 500
 
 ```
 uint16 public constant BPS_DENOM = 10_000
-```
-
-
-### referrals
-
-```
-IReferralSource public referrals
 ```
 
 
@@ -84,20 +70,6 @@ mapping(PoolId => mapping(address => uint256)) public platformOwed
 ```
 
 
-### referrerPool
-
-```
-mapping(PoolId => mapping(address => uint256)) public referrerPool
-```
-
-
-### referrerClaimed
-
-```
-mapping(PoolId => mapping(address => mapping(uint256 => uint256))) public referrerClaimed
-```
-
-
 ## Functions
 ### onlyHook
 
@@ -111,13 +83,6 @@ modifier onlyHook() ;
 
 ```
 receive() external payable;
-```
-
-### setReferrals
-
-
-```
-function setReferrals(address referrals_) external;
 ```
 
 ### setHook
@@ -162,20 +127,6 @@ function claimCreator(PoolId poolId, address currency) external returns (uint256
 function claimPlatform(PoolId poolId, address currency) external returns (uint256 amount);
 ```
 
-### claimReferrer
-
-
-```
-function claimReferrer(PoolId poolId, address currency, uint256 tokenId) external returns (uint256 amount);
-```
-
-### pendingReferrer
-
-
-```
-function pendingReferrer(PoolId poolId, address currency, uint256 tokenId) external view returns (uint256);
-```
-
 ### _pay
 
 
@@ -184,12 +135,6 @@ function _pay(address currency, address to, uint256 amount) internal;
 ```
 
 ## Events
-### ReferralsSet
-
-```
-event ReferralsSet(address indexed referrals);
-```
-
 ### HookSet
 
 ```
@@ -273,4 +218,3 @@ struct PoolInfo {
     bool registered;
 }
 ```
-

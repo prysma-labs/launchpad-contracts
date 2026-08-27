@@ -111,7 +111,6 @@ contract DeployCcaScript is Script {
         );
         require(address(feeHook) == hookAddr, "hook addr");
 
-        distributor.setReferrals(address(referrerNft));
         distributor.setHook(address(feeHook));
 
         address uerc20FactoryAddr = vm.envOr("UERC20_FACTORY", address(0));
@@ -123,7 +122,6 @@ contract DeployCcaScript is Script {
             ILiquidityLauncher(launcherAddr),
             ILBPStrategy(address(lbp)),
             IDistributorFactory(address(ccaFactory)),
-            registry,
             distributor,
             feeHook,
             address(compounder),

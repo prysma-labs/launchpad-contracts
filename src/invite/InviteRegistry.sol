@@ -4,17 +4,8 @@ pragma solidity ^0.8.26;
 import {ReferrerNFT} from "../nft/ReferrerNFT.sol";
 
 /// @notice Invite codes and referral attribution.
-/// @dev Deployed once per chain; shared across all auctions (keyed by auction address).
-/// Authority for bid gating + fee attribution (offchain DB is UX-only):
-/// - Factory registers each auction. Creating a token does not mint a distributor NFT
-///   and does not seed invites for the creator.
-/// - Only the platform operator may mint invites (`createInvitesFor`), or
-///   authorize a wallet to mint for itself via EIP-712 (`createInvites`).
-///   The issuer must hold a ReferrerNFT.
-/// - InviteValidationHook calls useInvite on CCA bid; unknown/self invites revert on first bid.
-///   The auction creator may bid without an invite; those bids get no referral credit.
-///   Creator-issued invites also get no distributor credit (creator is paid 20% separately).
-/// - Non-creator issuer volume is credited to the issuer's Recruit NFT (Scout+ earns fees).
+/// @dev Not wired into launches. Auctions are open; hook fees go to the creator.
+///      Kept for a later referral program.
 contract InviteRegistry {
     bytes32 private constant CREATE_INVITES_TYPEHASH = keccak256(
         "CreateInvites(address auction,address issuer,bytes32 codesHash,uint256 nonce,uint256 deadline)"

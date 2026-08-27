@@ -8,7 +8,7 @@ This can create an **extractive cycle**:
 
 <img src="../images/extractive-cycle.png" alt="Extractive launch cycle: snipers, bundlers, and influencers extracting from retail" width="480">
 
-Prysma takes a different approach. We recognize the importance of distributors and reward them for bringing value to the tokens. However, it must be done for the betterment of the overall ecosystem.
+Prysma takes a different approach. Auctions discover a price from aggregate demand. After graduation, trading fees go to the creator who launched the market.
 
 ## The problem with token launches
 
@@ -64,23 +64,7 @@ Auctions intentionally remove much of this dynamic.
 
 That improves price discovery, but removes one of the mechanisms that encourages participants to bring others into the market.
 
-Prysma Launchpad therefore treats **distribution as a separate part of the launch mechanism.**
-
-## Incentivizing contribution
-
-Prysma Launchpad allows participants to distribute launches through referral links.
-
-When a distributor brings participants into an auction, the protocol tracks the bid volume they contribute.
-
-Rather than paying a one-time referral bounty, Prysma Launchpad connects the distributor's reward to the market they helped create.
-
-After a successful auction graduates into a Uniswap market, trading generates fees. A portion of those fees is distributed to contributors based on the economic activity they brought into the original auction.
-
-This creates a different incentive:
-
-**Find something worth supporting → bring participants → help create the market → participate in the value that market generates.**
-
-The goal is to shift the economic advantage away from simply **being early** and toward **making a measurable contribution to the market.**
+Prysma Launchpad therefore treats **distribution as a separate problem**. Invite-based referrals are planned, but they are **not live**. Auctions are open to anyone.
 
 ## What Prysma Launchpad is designed to solve
 
@@ -92,6 +76,6 @@ Prysma Launchpad starts with a narrower question:
 
 **Can better incentives make token markets harder to manipulate?**
 
-Our approach combines auction-based price discovery with incentive-driven distribution to create token markets where contributing to growth is rewarded directly.
+Our approach starts with auction-based price discovery. Creator-aligned trading fees follow after graduation.
 
 **Prysma Launchpad is designing manipulation-resistant token markets through better incentives.**

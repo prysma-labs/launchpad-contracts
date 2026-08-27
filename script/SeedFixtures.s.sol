@@ -9,7 +9,6 @@ import {ILBPStrategy} from "liquidity-launcher/src/interfaces/ILBPStrategy.sol";
 import {ILBPInitializer} from "liquidity-launcher/src/interfaces/ILBPInitializer.sol";
 
 import {CcaLaunchFactory} from "../src/strategy/CcaLaunchFactory.sol";
-import {InviteRegistry} from "../src/invite/InviteRegistry.sol";
 import {ReferrerNFT} from "../src/nft/ReferrerNFT.sol";
 import {MaxMarketTrader} from "./MaxMarketTrader.sol";
 
@@ -60,9 +59,6 @@ contract SeedFixturesScript is Script {
         factory.createLaunch(_virtuosoGrad());
         factory.createLaunch(_megapotFailed());
         vm.stopBroadcast();
-        _seedInvite(factory.getLaunch(ID_PUNKS).auction, keccak256("failed-invite"));
-        _seedInvite(factory.getLaunch(ID_VIRTUOSO).auction, keccak256("grad-invite"));
-        _seedInvite(factory.getLaunch(ID_MEGAPOT).auction, keccak256("megapot-invite"));
     }
 
     /// @dev 25 owners, 242.5124 ETH total, over the 100 ETH target.
@@ -71,21 +67,20 @@ contract SeedFixturesScript is Script {
         (CcaLaunchFactory factory,, uint256 creatorKey,,) = _load();
         address auction = factory.getLaunch(ID_VIRTUOSO).auction;
         require(auction != address(0), "no auction");
-        bytes32 invite = keccak256("grad-invite");
 
         vm.startBroadcast(creatorKey);
         for (uint256 i = 0; i < 24; i++) {
             address bidder = vm.addr(uint256(keccak256(abi.encodePacked("virtuoso-bidder", i + 1))));
             uint128 amount = _virtuosoBidAmount(i);
             IContinuousClearingAuction(auction).submitBid{value: amount, gas: 2_000_000}(
-                _punksMaxPrice(i), amount, bidder, abi.encode(invite)
+                _punksMaxPrice(i), amount, bidder, ""
             );
         }
         vm.stopBroadcast();
 
         vm.startBroadcast(TESTER_1);
         IContinuousClearingAuction(auction).submitBid{value: 10 ether, gas: 2_000_000}(
-            _maxPrice(), 10 ether, TESTER_1_ADDR, abi.encode(invite)
+            _maxPrice(), 10 ether, TESTER_1_ADDR, ""
         );
         vm.stopBroadcast();
     }
@@ -95,14 +90,13 @@ contract SeedFixturesScript is Script {
         (CcaLaunchFactory factory,, uint256 creatorKey,,) = _load();
         address auction = factory.getLaunch(ID_PUNKS).auction;
         require(auction != address(0), "no auction");
-        bytes32 invite = keccak256("failed-invite");
 
         vm.startBroadcast(creatorKey);
         for (uint256 i = 0; i < 57; i++) {
             address bidder = vm.addr(uint256(keccak256(abi.encodePacked("punks-bidder", i + 1))));
             uint128 amount = _punksBidAmount(i);
             IContinuousClearingAuction(auction).submitBid{value: amount, gas: 2_000_000}(
-                _punksMaxPrice(i), amount, bidder, abi.encode(invite)
+                _punksMaxPrice(i), amount, bidder, ""
             );
         }
         vm.stopBroadcast();
@@ -114,21 +108,20 @@ contract SeedFixturesScript is Script {
         (CcaLaunchFactory factory,, uint256 creatorKey,,) = _load();
         address auction = factory.getLaunch(ID_MEGAPOT).auction;
         require(auction != address(0), "no auction");
-        bytes32 invite = keccak256("megapot-invite");
 
         vm.startBroadcast(creatorKey);
         for (uint256 i = 0; i < 12; i++) {
             address bidder = vm.addr(uint256(keccak256(abi.encodePacked("megapot-bidder", i + 1))));
             uint128 amount = _megapotBidAmount(i);
             IContinuousClearingAuction(auction).submitBid{value: amount, gas: 2_000_000}(
-                _punksMaxPrice(i), amount, bidder, abi.encode(invite)
+                _punksMaxPrice(i), amount, bidder, ""
             );
         }
         vm.stopBroadcast();
 
         vm.startBroadcast(TESTER_1);
         IContinuousClearingAuction(auction).submitBid{value: 0.4 ether, gas: 2_000_000}(
-            _maxPrice(), 0.4 ether, TESTER_1_ADDR, abi.encode(invite)
+            _maxPrice(), 0.4 ether, TESTER_1_ADDR, ""
         );
         vm.stopBroadcast();
     }
@@ -176,9 +169,7 @@ contract SeedFixturesScript is Script {
         console2.log("maxMarketTrader", address(trader));
     }
 
-    /// @dev Stamped 30 days ago by anvil-up.sh. Invite mint is a separate
-    ///      broadcast — forge view-calls in the same script still see the
-    ///      simulated auction address, not the mined one.
+    /// @dev Stamped 30 days ago by anvil-up.sh.
     function createMaxMarket() public {
         require(vm.addr(MAX_CREATOR_KEY) == MAX_CREATOR, "bad max creator key");
         (CcaLaunchFactory factory,,,,) = _load();
@@ -207,20 +198,6 @@ contract SeedFixturesScript is Script {
         vm.stopBroadcast();
     }
 
-    function seedMaxMarketDistributors() public {
-        (CcaLaunchFactory factory,, uint256 operatorKey,,) = _load();
-        address auction = factory.getLaunch(ID_MAX).auction;
-        require(auction != address(0), "no auction");
-        InviteRegistry registry = _registry();
-        vm.startBroadcast(operatorKey);
-        for (uint256 i = 0; i < 5; i++) {
-            bytes32[] memory codes = new bytes32[](1);
-            codes[0] = _maxDistInvite(i);
-            registry.createInvitesFor(auction, _maxDistIssuer(i), codes);
-        }
-        vm.stopBroadcast();
-    }
-
     /// @dev 12 owners / 5 distributors, 54.123 ETH total, over the 50 ETH target.
     function bidMaxMarket() public {
         (CcaLaunchFactory factory,, uint256 payerKey,,) = _load();
@@ -231,7 +208,7 @@ contract SeedFixturesScript is Script {
         for (uint256 i = 0; i < 12; i++) {
             uint128 amount = _maxBidAmount(i);
             IContinuousClearingAuction(auction).submitBid{value: amount, gas: 2_000_000}(
-                _punksMaxPrice(i), amount, _maxDistBidder(i), abi.encode(_maxDistInvite(_maxDistForBidder(i)))
+                _punksMaxPrice(i), amount, _maxDistBidder(i), ""
             );
         }
         vm.stopBroadcast();
@@ -242,13 +219,12 @@ contract SeedFixturesScript is Script {
         vm.startBroadcast(creatorKey);
         factory.createLaunch(_lootEnding());
         vm.stopBroadcast();
-        _seedInvite(factory.getLaunch(factory.launchCount()).auction, keccak256("ending-invite"));
         console2.log("fixtures");
-        console2.log("  1 Graduated     Max Market/MAX       54.123 ETH / 12 bids / 5 dists / 30d Token B flow");
-        console2.log("  2 Failed Raise  Punks/PUNKS          68.13742 ETH / 57 bids  invite=failed-invite");
-        console2.log("  3 Graduated     Virtuoso Club        242.5124 ETH / 25 bids  invite=grad-invite");
-        console2.log("  4 Failed Raise  Megapot/MEGAPOT      28.124135 ETH / 13 bids invite=megapot-invite");
-        console2.log("  5 Ending Soon   Loot Genie/LOOT      invite=ending-invite");
+        console2.log("  1 Graduated     Max Market/MAX       54.123 ETH / 12 bids / 30d Token B flow");
+        console2.log("  2 Failed Raise  Punks/PUNKS          68.13742 ETH / 57 bids");
+        console2.log("  3 Graduated     Virtuoso Club        242.5124 ETH / 25 bids");
+        console2.log("  4 Failed Raise  Megapot/MEGAPOT      28.124135 ETH / 13 bids");
+        console2.log("  5 Ending Soon   Loot Genie/LOOT");
     }
 
     function _load()
@@ -268,19 +244,6 @@ contract SeedFixturesScript is Script {
         string memory json = vm.readFile("./deployments/anvil-cca.json");
         factory = CcaLaunchFactory(json.readAddress(".cca.factory"));
         lbp = ILBPStrategy(json.readAddress(".cca.lbpStrategy"));
-    }
-
-    function _registry() internal view returns (InviteRegistry) {
-        return InviteRegistry(vm.readFile("./deployments/anvil-cca.json").readAddress(".cca.inviteRegistry"));
-    }
-
-    function _seedInvite(address auction, bytes32 code) internal {
-        (,, uint256 operatorKey,,) = _load();
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = code;
-        vm.startBroadcast(operatorKey);
-        _registry().createInvitesFor(auction, MAX_DIST_TESTER, codes);
-        vm.stopBroadcast();
     }
 
     function _nft() internal view returns (ReferrerNFT) {
@@ -369,14 +332,6 @@ contract SeedFixturesScript is Script {
         );
     }
 
-    function _maxDistInvite(uint256 i) internal pure returns (bytes32) {
-        if (i == 0) return keccak256("max-dist-1");
-        if (i == 1) return keccak256("max-dist-2");
-        if (i == 2) return keccak256("max-dist-3");
-        if (i == 3) return keccak256("max-dist-4");
-        return keccak256("max-dist-5");
-    }
-
     function _maxDistIssuer(uint256 i) internal pure returns (address) {
         if (i == 0) return MAX_DIST_TESTER;
         return vm.addr(uint256(keccak256(abi.encodePacked("max-dist-issuer", i + 1))));
@@ -384,14 +339,6 @@ contract SeedFixturesScript is Script {
 
     function _maxDistBidder(uint256 i) internal pure returns (address) {
         return vm.addr(uint256(keccak256(abi.encodePacked("max-dist-bidder", i + 1))));
-    }
-
-    function _maxDistForBidder(uint256 i) internal pure returns (uint256) {
-        if (i < 3) return 0;
-        if (i < 6) return 1;
-        if (i < 8) return 2;
-        if (i < 10) return 3;
-        return 4;
     }
 
     function _maxBidAmount(uint256 i) internal pure returns (uint128) {

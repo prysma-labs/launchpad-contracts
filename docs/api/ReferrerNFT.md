@@ -1,14 +1,13 @@
 # ReferrerNFT
-[Git Source](https://github.com/prysma-labs/launchpad-contracts/blob/3528c3a546aa4da6c3de1ec8f4ab563f3a4a2c69/src/nft/ReferrerNFT.sol)
+[Git Source](https://github.com/prysma-labs/launchpad-contracts/blob/5581699504b49b43ecb36ba097021e1d689dd2d0/src/nft/ReferrerNFT.sol)
 
 **Inherits:**
 ERC721, [IReferralSource](IReferralSource.md)
 
 Transferable distributor NFT. Minted separately as Recruit (10k).
 
-Holding a token makes you a distributor on every auction. Referred
-volume is tracked per auction; Scout+ weight earns hook-fee share.
-Recruit has weight 0 and does not accrue fees.
+Currently unused for bidding or fees. Referral volume / tier weight
+remain for a later referral program.
 
 
 ## State Variables

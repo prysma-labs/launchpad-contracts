@@ -7,9 +7,8 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IReferralSource} from "../fee/IReferralSource.sol";
 
 /// @notice Transferable distributor NFT. Minted separately as Recruit (10k).
-/// @dev Holding a token makes you a distributor on every auction. Referred
-///      volume is tracked per auction; Scout+ weight earns hook-fee share.
-///      Recruit has weight 0 and does not accrue fees.
+/// @dev Currently unused for bidding or fees. Referral volume / tier weight
+///      remain for a later referral program.
 contract ReferrerNFT is ERC721, IReferralSource {
     using Strings for uint256;
 

@@ -5,6 +5,7 @@ import {IValidationHook} from "continuous-clearing-auction/interfaces/IValidatio
 import {InviteRegistry} from "./InviteRegistry.sol";
 
 /// @notice CCA bid validation: require a valid invite code in hookData.
+/// @dev Not attached to new auctions. Kept for a later referral program.
 contract InviteValidationHook is IValidationHook {
     InviteRegistry public immutable registry;
 

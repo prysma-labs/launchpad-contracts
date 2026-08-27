@@ -1,19 +1,10 @@
 # InviteRegistry
-[Git Source](https://github.com/prysma-labs/launchpad-contracts/blob/3528c3a546aa4da6c3de1ec8f4ab563f3a4a2c69/src/invite/InviteRegistry.sol)
+[Git Source](https://github.com/prysma-labs/launchpad-contracts/blob/5581699504b49b43ecb36ba097021e1d689dd2d0/src/invite/InviteRegistry.sol)
 
 Invite codes and referral attribution.
 
-Deployed once per chain; shared across all auctions (keyed by auction address).
-Authority for bid gating + fee attribution (offchain DB is UX-only):
-- Factory registers each auction. Creating a token does not mint a distributor NFT
-and does not seed invites for the creator.
-- Only the platform operator may mint invites (`createInvitesFor`), or
-authorize a wallet to mint for itself via EIP-712 (`createInvites`).
-The issuer must hold a ReferrerNFT.
-- InviteValidationHook calls useInvite on CCA bid; unknown/self invites revert on first bid.
-The auction creator may bid without an invite; those bids get no referral credit.
-Creator-issued invites also get no distributor credit (creator is paid 20% separately).
-- Non-creator issuer volume is credited to the issuer's Recruit NFT (Scout+ earns fees).
+Not wired into launches. Auctions are open; hook fees go to the creator.
+Kept for a later referral program.
 
 
 ## State Variables

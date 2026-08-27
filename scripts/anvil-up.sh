@@ -107,7 +107,6 @@ cast rpc evm_setNextBlockTimestamp "$MAX_CREATED_AT" --rpc-url "$RPC_URL" >/dev/
 seed "mintRecruits()"
 seed "createMaxMarket()"
 cast rpc anvil_mine 1 --rpc-url "$RPC_URL" >/dev/null
-seed "seedMaxMarketDistributors()"
 seed "bidMaxMarket()"
 cast rpc anvil_mine 250 --rpc-url "$RPC_URL" >/dev/null
 seed "finalizeMaxMarket()"
@@ -216,4 +215,3 @@ echo
 echo "Anvil is running. Import account #0 into your wallet:"
 echo "  0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 echo "Point the web app at Anvil with NEXT_PUBLIC_LAUNCHPAD_NETWORK=anvil"
-echo "Invite codes: failed-invite (Punks) | megapot-invite (Megapot) | grad-invite (Virtuoso) | max-dist-1..5 (Max Market) | ending-invite (Loot Genie)"

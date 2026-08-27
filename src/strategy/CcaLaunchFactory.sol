@@ -26,9 +26,8 @@ import {UERC20Metadata} from "@uniswap/uerc20-factory/src/libraries/UERC20Metada
 
 import {FeeDistributor} from "../fee/FeeDistributor.sol";
 import {LaunchFeeHook} from "../fee/LaunchFeeHook.sol";
-import {InviteRegistry} from "../invite/InviteRegistry.sol";
 
-/// @notice Creates a UERC20 + CCA/LBP distribution with invite gating and fee hook.
+/// @notice Creates a UERC20 + CCA/LBP distribution with fee hook.
 contract CcaLaunchFactory {
     using PoolIdLibrary for PoolKey;
 
@@ -49,7 +48,6 @@ contract CcaLaunchFactory {
     ILiquidityLauncher public immutable launcher;
     ILBPStrategy public immutable lbpStrategy;
     IDistributorFactory public immutable ccaFactory;
-    InviteRegistry public immutable invites;
     FeeDistributor public immutable distributor;
     LaunchFeeHook public immutable feeHook;
     address public immutable positionRecipient;
@@ -110,7 +108,6 @@ contract CcaLaunchFactory {
         ILiquidityLauncher launcher_,
         ILBPStrategy lbpStrategy_,
         IDistributorFactory ccaFactory_,
-        InviteRegistry invites_,
         FeeDistributor distributor_,
         LaunchFeeHook feeHook_,
         address positionRecipient_,
@@ -119,7 +116,6 @@ contract CcaLaunchFactory {
         launcher = launcher_;
         lbpStrategy = lbpStrategy_;
         ccaFactory = ccaFactory_;
-        invites = invites_;
         distributor = distributor_;
         feeHook = feeHook_;
         positionRecipient = positionRecipient_;
@@ -181,7 +177,7 @@ contract CcaLaunchFactory {
             endBlock: endBlock,
             claimBlock: claimBlock,
             tickSpacing: DEFAULT_AUCTION_TICK_SPACING,
-            validationHook: address(invites.validationHook()),
+            validationHook: address(0),
             floorPrice: DEFAULT_FLOOR_PRICE,
             requiredCurrencyRaised: params.minRaise,
             auctionStepsData: auctionStepsData
@@ -222,8 +218,6 @@ contract CcaLaunchFactory {
         auction = address(
             ccaFactory.getAddress(token, auctionSupply, initializerParams, initializerSalt, address(lbpStrategy))
         );
-
-        invites.registerAuction(auction, token, msg.sender);
 
         Distribution memory dist =
             Distribution({strategy: address(lbpStrategy), amount: uint128(supply), configData: configData});

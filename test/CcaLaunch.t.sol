@@ -26,9 +26,6 @@ import {BaseUERC20} from "@uniswap/uerc20-factory/src/tokens/BaseUERC20.sol";
 import {BaseTest} from "./utils/BaseTest.sol";
 import {FeeDistributor} from "../src/fee/FeeDistributor.sol";
 import {LaunchFeeHook} from "../src/fee/LaunchFeeHook.sol";
-import {InviteRegistry} from "../src/invite/InviteRegistry.sol";
-import {InviteValidationHook} from "../src/invite/InviteValidationHook.sol";
-import {ReferrerNFT} from "../src/nft/ReferrerNFT.sol";
 import {CcaLaunchFactory} from "../src/strategy/CcaLaunchFactory.sol";
 
 contract CcaLaunchTest is BaseTest {
@@ -45,9 +42,6 @@ contract CcaLaunchTest is BaseTest {
     ContinuousClearingAuctionFactory ccaFactory;
     LBPStrategy lbp;
     FeeDistributor distributor;
-    InviteRegistry registry;
-    ReferrerNFT referrerNft;
-    InviteValidationHook inviteHook;
     LaunchFeeHook feeHook;
     UERC20Factory uerc20Factory;
     CcaLaunchFactory factory;
@@ -55,10 +49,7 @@ contract CcaLaunchTest is BaseTest {
     address creator = makeAddr("creator");
     address bidder = makeAddr("bidder");
     address stranger = makeAddr("stranger");
-    uint256 operatorKey = 0xA11CE;
-    address operator = vm.addr(operatorKey);
 
-    bytes32 inviteCode = keccak256("invite-1");
     bytes constant X_EXTRA =
         '{"v":1,"xVerificationToken":"eyJ4X2hhbmRsZSI6InRlc3QifQ.sig"}';
 
@@ -78,12 +69,6 @@ contract CcaLaunchTest is BaseTest {
         assertEq(address(lbp), lbpAddr);
 
         distributor = new FeeDistributor();
-        registry = new InviteRegistry();
-        referrerNft = new ReferrerNFT("https://launchpad.test/api/nft/");
-        referrerNft.setRegistry(address(registry));
-        registry.setReferrerNft(address(referrerNft));
-        inviteHook = new InviteValidationHook(registry);
-        registry.setValidationHook(address(inviteHook));
 
         bytes memory hookArgs = abi.encode(address(poolManager), address(lbp), address(distributor), HOOK_FEE);
         uint160 flags = uint160(
@@ -95,21 +80,17 @@ contract CcaLaunchTest is BaseTest {
         feeHook = new LaunchFeeHook{salt: salt}(poolManager, address(lbp), distributor, HOOK_FEE);
         assertEq(address(feeHook), hookAddr);
 
-        distributor.setReferrals(address(referrerNft));
         distributor.setHook(address(feeHook));
 
         factory = new CcaLaunchFactory(
             ILiquidityLauncher(address(launcher)),
             ILBPStrategy(address(lbp)),
             IDistributorFactory(address(ccaFactory)),
-            registry,
             distributor,
             feeHook,
             address(this),
             address(uerc20Factory)
         );
-        registry.setFactory(address(factory));
-        registry.setOperator(operator);
         distributor.setRegistrar(address(factory));
 
         vm.deal(bidder, 1000 ether);
@@ -118,7 +99,7 @@ contract CcaLaunchTest is BaseTest {
         vm.deal(address(this), 100 ether);
     }
 
-    function test_createLaunch_registersAuctionAndOpensCca() public {
+    function test_createLaunch_opensCca() public {
         (uint256 launchId, address token, address auction) = _create(1 ether);
 
         CcaLaunchFactory.Launch memory launch = factory.getLaunch(launchId);
@@ -127,9 +108,7 @@ contract CcaLaunchTest is BaseTest {
         assertEq(launch.auction, auction);
         assertEq(launch.poolLpFee, 1_000);
         assertEq(launch.hookFee, HOOK_FEE);
-        assertEq(registry.creatorOf(auction), creator);
-        assertEq(registry.inviteIssuer(auction, inviteCode), address(0));
-        assertEq(address(IContinuousClearingAuction(auction).validationHook()), address(inviteHook));
+        assertEq(address(IContinuousClearingAuction(auction).validationHook()), address(0));
         assertEq(IContinuousClearingAuction(auction).fundsRecipient(), address(lbp));
         assertEq(
             IContinuousClearingAuction(auction).tokensRecipient(),
@@ -139,58 +118,6 @@ contract CcaLaunchTest is BaseTest {
 
         (,,, bytes memory extraData) = BaseUERC20(token).metadata();
         assertEq(extraData, X_EXTRA);
-    }
-
-    function test_operatorCanCreateInvitesFor() public {
-        (,, address auction) = _create(1 ether);
-        bytes32 extra = keccak256("invite-2");
-        bytes32[] memory extraCodes = new bytes32[](1);
-        extraCodes[0] = extra;
-
-        vm.prank(stranger);
-        vm.expectRevert(InviteRegistry.NotAuthorized.selector);
-        registry.createInvitesFor(auction, stranger, extraCodes);
-
-        referrerNft.mintTo(stranger);
-        vm.prank(operator);
-        registry.createInvitesFor(auction, stranger, extraCodes);
-        assertEq(registry.inviteIssuer(auction, extra), stranger);
-
-        vm.prank(operator);
-        vm.expectRevert(InviteRegistry.InviteExists.selector);
-        registry.createInvitesFor(auction, stranger, extraCodes);
-    }
-
-    function test_createInvites_requiresOperatorSignature() public {
-        (,, address auction) = _create(1 ether);
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = keccak256("signed-invite");
-        uint256 deadline = block.timestamp + 1 hours;
-        bytes memory sig = _signCreateInvites(auction, stranger, codes, 0, deadline);
-
-        vm.prank(stranger);
-        vm.expectRevert(InviteRegistry.NotDistributor.selector);
-        registry.createInvites(auction, codes, deadline, sig);
-
-        referrerNft.mintTo(stranger);
-        vm.prank(stranger);
-        registry.createInvites(auction, codes, deadline, sig);
-        assertEq(registry.inviteIssuer(auction, codes[0]), stranger);
-        assertEq(registry.nonces(stranger), 1);
-        assertEq(referrerNft.tokenOf(auction, stranger), 1);
-    }
-
-    function test_createInvites_rejectsBadSignature() public {
-        (,, address auction) = _create(1 ether);
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = keccak256("signed-invite");
-        uint256 deadline = block.timestamp + 1 hours;
-        bytes memory sig = _signCreateInvites(auction, bidder, codes, 0, deadline);
-
-        referrerNft.mintTo(stranger);
-        vm.prank(stranger);
-        vm.expectRevert(InviteRegistry.InvalidSignature.selector);
-        registry.createInvites(auction, codes, deadline, sig);
     }
 
     function test_createLaunch_revertsWithoutXVerification() public {
@@ -214,221 +141,15 @@ contract CcaLaunchTest is BaseTest {
         factory.createLaunch(params);
     }
 
-    function test_creatorCannotCreateInvitesWithoutNft() public {
-        (,, address auction) = _create(1 ether);
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = keccak256("creator-invite");
-        uint256 deadline = block.timestamp + 1 hours;
-        bytes memory sig = _signCreateInvites(auction, creator, codes, 0, deadline);
-
-        vm.prank(creator);
-        vm.expectRevert(InviteRegistry.NotDistributor.selector);
-        registry.createInvites(auction, codes, deadline, sig);
-
-        vm.prank(operator);
-        vm.expectRevert(InviteRegistry.NotDistributor.selector);
-        registry.createInvitesFor(auction, creator, codes);
-    }
-
-    function test_bid_revertsWithoutInvite() public {
+    function test_anyone_canBid() public {
         (,, address auction) = _create(1 ether);
         vm.roll(block.number + 1);
-
-        vm.prank(stranger);
-        vm.expectRevert();
-        IContinuousClearingAuction(auction).submitBid{value: 1 ether}(_maxPrice(), 1 ether, stranger, "");
-    }
-
-    function test_creator_canBidWithoutInvite() public {
-        (,, address auction) = _create(1 ether);
-        vm.roll(block.number + 1);
-        vm.deal(creator, 2 ether);
-
-        vm.prank(creator);
-        IContinuousClearingAuction(auction).submitBid{value: 1 ether}(
-            _maxPrice(), 1 ether, creator, abi.encode(bytes32(0))
-        );
-        assertTrue(registry.participated(auction, creator));
-        assertEq(registry.referrerOf(auction, creator), address(0));
-        assertEq(referrerNft.tokenOf(auction, creator), 0);
-        assertEq(referrerNft.totalWeightOf(auction), 0);
-    }
-
-    function test_bid_withCreatorInvite_doesNotCreditNft() public {
-        (,, address auction) = _create(1 ether);
-        _seedInvite(auction, creator, inviteCode);
-        vm.roll(block.number + 1);
-
-        vm.prank(bidder);
-        IContinuousClearingAuction(auction).submitBid{value: 1 ether}(
-            _maxPrice(), 1 ether, bidder, abi.encode(inviteCode)
-        );
-        assertTrue(registry.participated(auction, bidder));
-        assertEq(registry.referrerOf(auction, bidder), creator);
-        assertEq(referrerNft.tokenOf(auction, creator), 1);
-        assertEq(referrerNft.auctionVolume(1, auction), 0);
-        assertEq(referrerNft.totalWeightOf(auction), 0);
-    }
-
-    function test_bid_withOutbound_doesNotMintInvite() public {
-        (,, address auction) = _create(1 ether);
-        _seedInvite(auction, stranger, inviteCode);
-        vm.roll(block.number + 1);
-
-        bytes32 outbound = keccak256("bidder-outbound");
-        vm.prank(bidder);
-        IContinuousClearingAuction(auction).submitBid{value: 1 ether}(
-            _maxPrice(), 1 ether, bidder, abi.encode(inviteCode, outbound)
-        );
-
-        assertEq(registry.inviteIssuer(auction, outbound), address(0));
-        assertEq(registry.referrerOf(auction, bidder), stranger);
-        assertTrue(registry.participated(auction, bidder));
-    }
-
-    function test_nftHolder_canBidWithoutInvite() public {
-        (,, address auction) = _create(1 ether);
-        vm.roll(block.number + 1);
-        referrerNft.mintTo(stranger);
-        vm.deal(stranger, 2 ether);
 
         vm.prank(stranger);
         IContinuousClearingAuction(auction).submitBid{value: 1 ether}(
-            _maxPrice(), 1 ether, stranger, abi.encode(bytes32(0))
+            _maxPrice(), 1 ether, stranger, ""
         );
-        assertTrue(registry.participated(auction, stranger));
-        assertEq(registry.referrerOf(auction, stranger), address(0));
-    }
-
-    function test_distributor_upgradesFromRecruitAtScout() public {
-        (,, address auction) = _create(1 ether);
-        vm.roll(block.number + 1);
-
-        uint256 tokenId = referrerNft.mintTo(bidder);
-        assertEq(uint256(referrerNft.tier(tokenId)), uint256(ReferrerNFT.Tier.Recruit));
-        assertEq(referrerNft.auctionWeight(tokenId, auction), 0);
-
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = keccak256("bidder-invite");
-        vm.prank(operator);
-        registry.createInvitesFor(auction, bidder, codes);
-        assertEq(referrerNft.tokenOf(auction, bidder), tokenId);
-
-        vm.deal(stranger, 200 ether);
-        vm.prank(stranger);
-        IContinuousClearingAuction(auction).submitBid{value: 0.4 ether}(
-            _maxPrice(), 0.4 ether, stranger, abi.encode(codes[0])
-        );
-        assertEq(referrerNft.auctionVolume(tokenId, auction), 0.4 ether);
-        assertEq(referrerNft.auctionWeight(tokenId, auction), 0);
-        assertEq(referrerNft.totalWeightOf(auction), 0);
-        assertEq(uint256(referrerNft.tierOfAuction(tokenId, auction)), uint256(ReferrerNFT.Tier.Recruit));
-
-        address other = makeAddr("other");
-        vm.deal(other, 2 ether);
-        vm.prank(other);
-        IContinuousClearingAuction(auction).submitBid{value: 0.2 ether}(
-            _maxPrice(), 0.2 ether, other, abi.encode(codes[0])
-        );
-        assertEq(referrerNft.ownerOf(tokenId), bidder);
-        assertEq(referrerNft.auctionVolume(tokenId, auction), 0.6 ether);
-        (ReferrerNFT.Tier tier, uint256 weight) = referrerNft.tierOf(0.6 ether);
-        assertEq(uint256(tier), uint256(ReferrerNFT.Tier.Scout));
-        assertEq(referrerNft.auctionWeight(tokenId, auction), weight);
-        assertEq(referrerNft.totalWeightOf(auction), 1);
-
-        vm.prank(stranger);
-        IContinuousClearingAuction(auction).submitBid{value: 5 ether}(
-            _maxPrice(), 5 ether, stranger, abi.encode(codes[0])
-        );
-        assertEq(referrerNft.auctionVolume(tokenId, auction), 5.6 ether);
-        assertEq(uint256(referrerNft.tierOfAuction(tokenId, auction)), uint256(ReferrerNFT.Tier.Advocate));
-        assertEq(referrerNft.auctionWeight(tokenId, auction), 10);
-        assertEq(referrerNft.totalWeightOf(auction), 10);
-    }
-
-    function test_claimReferrer_followsNft() public {
-        (uint256 launchId, address token, address auction) = _create(1 ether);
-        CcaLaunchFactory.Launch memory launch = factory.getLaunch(launchId);
-        vm.roll(launch.startBlock + 1);
-
-        referrerNft.mintTo(bidder);
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = keccak256("dist-invite");
-        vm.prank(operator);
-        registry.createInvitesFor(auction, bidder, codes);
-
-        vm.deal(stranger, 60 ether);
-        vm.prank(stranger);
-        IContinuousClearingAuction(auction).submitBid{value: 50 ether}(
-            _maxPrice(), 50 ether, stranger, abi.encode(codes[0])
-        );
-        uint256 tokenId = referrerNft.tokenOf(auction, bidder);
-        assertEq(tokenId, 1);
-        assertEq(referrerNft.ownerOf(tokenId), bidder);
-        assertEq(uint256(referrerNft.tier(tokenId)), uint256(ReferrerNFT.Tier.Partner));
-
-        vm.roll(launch.endBlock);
-        IContinuousClearingAuction(auction).checkpoint();
-        assertTrue(IContinuousClearingAuction(auction).isGraduated());
-        vm.roll(launch.endBlock + 1);
-        lbp.migrate(ILBPInitializer(auction));
-
-        PoolKey memory key = PoolKey({
-            currency0: Currency.wrap(address(0)),
-            currency1: Currency.wrap(token),
-            fee: 1_000,
-            tickSpacing: 60,
-            hooks: IHooks(address(feeHook))
-        });
-        uint256 swapIn = 1 ether;
-        swapRouter.swapExactTokensForTokens{value: swapIn}(
-            swapIn, 0, true, key, "", address(this), block.timestamp + 60
-        );
-        feeHook.harvest(key);
-
-        uint256 hookFeeAmount = (swapIn * HOOK_FEE) / 1e6;
-        uint256 expectedReferrer = (hookFeeAmount * 7_500) / 10_000;
-        uint256 before = bidder.balance;
-        vm.prank(bidder);
-        uint256 claimed = distributor.claimReferrer(key.toId(), address(0), tokenId);
-        assertEq(claimed, expectedReferrer);
-        assertEq(bidder.balance, before + claimed);
-
-        vm.prank(bidder);
-        referrerNft.transferFrom(bidder, stranger, tokenId);
-        assertEq(referrerNft.ownerOf(tokenId), stranger);
-        assertEq(referrerNft.tokensOfOwner(bidder).length, 0);
-        assertEq(referrerNft.tokensOfOwner(stranger)[0], tokenId);
-
-        uint256 tokenBal = IERC20(token).balanceOf(address(this));
-        IERC20(token).approve(address(swapRouter), tokenBal);
-        swapRouter.swapExactTokensForTokens(tokenBal / 2, 0, false, key, "", address(this), block.timestamp + 60);
-        feeHook.harvest(key);
-
-        vm.prank(bidder);
-        vm.expectRevert(FeeDistributor.NothingToClaim.selector);
-        distributor.claimReferrer(key.toId(), address(0), tokenId);
-
-        vm.prank(stranger);
-        assertGt(distributor.claimReferrer(key.toId(), address(0), tokenId), 0);
-    }
-
-    function test_participantCannotCreateInvitesWithoutAuth() public {
-        (,, address auction) = _create(1 ether);
-        _seedInvite(auction, stranger, inviteCode);
-        vm.roll(block.number + 1);
-
-        vm.prank(bidder);
-        IContinuousClearingAuction(auction).submitBid{value: 1 ether}(
-            _maxPrice(), 1 ether, bidder, abi.encode(inviteCode)
-        );
-
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = keccak256("bidder-invite");
-        vm.prank(bidder);
-        vm.expectRevert(InviteRegistry.NotAuthorized.selector);
-        registry.createInvitesFor(auction, bidder, codes);
+        assertEq(auction.balance, 1 ether);
     }
 
     function test_migrate_poolUsesFeeAndHook_thenHarvestClaims() public {
@@ -436,10 +157,9 @@ contract CcaLaunchTest is BaseTest {
         CcaLaunchFactory.Launch memory launch = factory.getLaunch(launchId);
 
         vm.roll(launch.startBlock + 1);
-        referrerNft.mintTo(bidder);
         vm.prank(bidder);
         IContinuousClearingAuction(auction).submitBid{value: 50 ether}(
-            _maxPrice(), 50 ether, bidder, abi.encode(bytes32(0))
+            _maxPrice(), 50 ether, bidder, ""
         );
 
         vm.roll(launch.endBlock);
@@ -467,15 +187,13 @@ contract CcaLaunchTest is BaseTest {
         feeHook.harvest(key);
 
         uint256 hookFeeAmount = (swapIn * HOOK_FEE) / 1e6;
-        uint256 expectedCreator = (hookFeeAmount * 2_000) / 10_000;
+        uint256 expectedCreator = (hookFeeAmount * 9_500) / 10_000;
         uint256 creatorEthBefore = creator.balance;
         vm.prank(creator);
         uint256 claimed = distributor.claimCreator(key.toId(), address(0));
         assertEq(claimed, expectedCreator);
         assertEq(creator.balance, creatorEthBefore + claimed);
         assertEq(distributor.creatorOwed(key.toId(), token), 0);
-
-        assertEq(distributor.pendingReferrer(key.toId(), address(0), 1), 0);
 
         address platform = distributor.PLATFORM();
         uint256 platformOwed = distributor.platformOwed(key.toId(), address(0));
@@ -512,7 +230,6 @@ contract CcaLaunchTest is BaseTest {
         });
         vm.prank(creator);
         (,, address auction) = factory.createLaunch(params);
-        _seedInvite(auction, stranger, inviteCode);
         vm.roll(block.number + 1);
         vm.deal(creator, 200 ether);
         uint256 floor = FLOOR_PRICE;
@@ -530,7 +247,7 @@ contract CcaLaunchTest is BaseTest {
                 : uint128(6.13742 ether);
             vm.prank(creator);
             IContinuousClearingAuction(auction).submitBid{value: amount}(
-                floor + tick * (BID_TICKS_ABOVE_FLOOR + i), amount, owner, abi.encode(inviteCode)
+                floor + tick * (BID_TICKS_ABOVE_FLOOR + i), amount, owner, ""
             );
             vm.roll(block.number + 1);
         }
@@ -554,7 +271,6 @@ contract CcaLaunchTest is BaseTest {
         });
         vm.prank(creator);
         (,, address auction) = factory.createLaunch(params);
-        _seedInvite(auction, stranger, inviteCode);
         vm.roll(block.number + 1);
         vm.deal(creator, 50 ether);
         address tester = 0x530bf56676Af5bdf5B0104Db8CD3d4588AA80735;
@@ -570,13 +286,13 @@ contract CcaLaunchTest is BaseTest {
                 : uint128(4.724135 ether);
             vm.prank(creator);
             IContinuousClearingAuction(auction).submitBid{value: amount}(
-                floor + tick * (BID_TICKS_ABOVE_FLOOR + i), amount, owner, abi.encode(inviteCode)
+                floor + tick * (BID_TICKS_ABOVE_FLOOR + i), amount, owner, ""
             );
             vm.roll(block.number + 1);
         }
         vm.prank(tester);
         IContinuousClearingAuction(auction).submitBid{value: 0.4 ether}(
-            _maxPrice(), 0.4 ether, tester, abi.encode(inviteCode)
+            _maxPrice(), 0.4 ether, tester, ""
         );
         assertEq(auction.balance, 28.124135 ether);
     }
@@ -598,7 +314,6 @@ contract CcaLaunchTest is BaseTest {
         });
         vm.prank(creator);
         (,, address auction) = factory.createLaunch(params);
-        _seedInvite(auction, stranger, inviteCode);
         vm.roll(block.number + 1);
         vm.deal(creator, 300 ether);
         address tester = 0x530bf56676Af5bdf5B0104Db8CD3d4588AA80735;
@@ -616,47 +331,19 @@ contract CcaLaunchTest is BaseTest {
                 : uint128(4.5124 ether);
             vm.prank(creator);
             IContinuousClearingAuction(auction).submitBid{value: amount}(
-                floor + tick * (BID_TICKS_ABOVE_FLOOR + i), amount, owner, abi.encode(inviteCode)
+                floor + tick * (BID_TICKS_ABOVE_FLOOR + i), amount, owner, ""
             );
             vm.roll(block.number + 1);
         }
         vm.prank(tester);
         IContinuousClearingAuction(auction).submitBid{value: 10 ether}(
-            _maxPrice(), 10 ether, tester, abi.encode(inviteCode)
+            _maxPrice(), 10 ether, tester, ""
         );
         assertEq(auction.balance, 242.5124 ether);
     }
 
-    function _signCreateInvites(
-        address auction,
-        address issuer,
-        bytes32[] memory codes,
-        uint256 nonce,
-        uint256 deadline
-    ) internal view returns (bytes memory) {
-        bytes32 typehash = keccak256(
-            "CreateInvites(address auction,address issuer,bytes32 codesHash,uint256 nonce,uint256 deadline)"
-        );
-        bytes32 structHash = keccak256(
-            abi.encode(typehash, auction, issuer, keccak256(abi.encode(codes)), nonce, deadline)
-        );
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", registry.DOMAIN_SEPARATOR(), structHash));
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(operatorKey, digest);
-        return abi.encodePacked(r, s, v);
-    }
-
     function _maxPrice() internal pure returns (uint256) {
         return FLOOR_PRICE + TICK_SPACING_Q96 * BID_TICKS_ABOVE_FLOOR;
-    }
-
-    function _seedInvite(address auction, address issuer, bytes32 code) internal {
-        if (referrerNft.tokenOfHolder(issuer) == 0) {
-            referrerNft.mintTo(issuer);
-        }
-        bytes32[] memory codes = new bytes32[](1);
-        codes[0] = code;
-        vm.prank(operator);
-        registry.createInvitesFor(auction, issuer, codes);
     }
 
     function _create(uint128 minRaise) internal returns (uint256 launchId, address token, address auction) {
