@@ -6,7 +6,7 @@ ANVIL_KEY="${ANVIL_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d
 RPC_URL="${RPC_URL:-http://127.0.0.1:8545}"
 # Never reuse Sepolia addresses on a fresh Anvil chain.
 unset UERC20_FACTORY LIQUIDITY_LAUNCHER
-WEB_DEPLOY="${WEB_DEPLOY:-../launchpad/web/src/lib/deployments/anvil.json}"
+WEB_DEPLOY="${WEB_DEPLOY:-../launchpad/frontend/src/lib/deployments/anvil.json}"
 NOW="$(date +%s)"
 # Max Market is stamped 30d ago; Punks / Virtuoso / Megapot are 1d ago.
 # Genesis must be earlier than Max so we can warp forward only.
@@ -85,7 +85,7 @@ for wallet in "${FUND_WALLETS[@]}"; do
   echo "funded $wallet with 100 ETH"
 done
 
-WEB_DIR="$(cd ../launchpad/web && pwd)"
+WEB_DIR="$(cd ../launchpad/frontend && pwd)"
 if [[ -f "$WEB_DIR/scripts/clear-network-db.mjs" ]]; then
   echo "clearing launchpad DB for Anvil (chain 31337)"
   (cd "$WEB_DIR" && node scripts/clear-network-db.mjs anvil) \
@@ -193,15 +193,15 @@ out = {
 }
 text = json.dumps(out, indent=2) + "\n"
 Path("deployments/anvil.json").write_text(text)
-web = Path("../launchpad/web/src/lib/deployments/anvil.json")
+web = Path("../launchpad/frontend/src/lib/deployments/anvil.json")
 web.parent.mkdir(parents=True, exist_ok=True)
 web.write_text(text)
 print("wrote", web)
 
 for src, dst in [
-    ("out/ReferrerNFT.sol/ReferrerNFT.json", "../launchpad/web/src/lib/abi/ReferrerNFT.json"),
-    ("out/FeeDistributor.sol/FeeDistributor.json", "../launchpad/web/src/lib/abi/FeeDistributor.json"),
-    ("out/InviteRegistry.sol/InviteRegistry.json", "../launchpad/web/src/lib/abi/InviteRegistry.json"),
+    ("out/ReferrerNFT.sol/ReferrerNFT.json", "../launchpad/frontend/src/lib/abi/ReferrerNFT.json"),
+    ("out/FeeDistributor.sol/FeeDistributor.json", "../launchpad/frontend/src/lib/abi/FeeDistributor.json"),
+    ("out/InviteRegistry.sol/InviteRegistry.json", "../launchpad/frontend/src/lib/abi/InviteRegistry.json"),
 ]:
     abi = json.loads(Path(src).read_text())["abi"]
     Path(dst).write_text(json.dumps(abi, indent=2) + "\n")

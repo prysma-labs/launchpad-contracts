@@ -44,7 +44,7 @@ def load_secret() -> str:
     for line in WEB_ENV.read_text().splitlines():
         if line.startswith("X_VERIFICATION_SECRET="):
             return line.split("=", 1)[1].strip().strip("'\"")
-    raise SystemExit("X_VERIFICATION_SECRET missing in launchpad/web/.env.local")
+    raise SystemExit("X_VERIFICATION_SECRET missing in launchpad/frontend/.env.local")
 
 
 def b64url(data: bytes) -> str:
